@@ -4,16 +4,28 @@ import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { colors } from '../theme/colors';
 
-const RegisterScreen: React.FC<any> = ({ navigation }) => {
+const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { setIsLoggedIn } = route.params;
 
   const handleRegister = () => {
-    if (!fullName || !email || !password || !confirmPassword) {
+    if (!fullName || !email || !phone || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email');
+      return;
+    }
+
+    if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
+      Alert.alert('Error', 'Please enter a valid phone number');
       return;
     }
 
@@ -30,8 +42,8 @@ const RegisterScreen: React.FC<any> = ({ navigation }) => {
     setLoading(true);
     // Simulación de API call
     setTimeout(() => {
-      Alert.alert('Success', 'Account created successfully');
-      navigation.replace('MainTabs');
+      Alert.alert('Success', 'Account created successfully! Welcome to HotelFind.');
+      setIsLoggedIn(true);
       setLoading(false);
     }, 1500);
   };
@@ -46,6 +58,7 @@ const RegisterScreen: React.FC<any> = ({ navigation }) => {
         value={fullName}
         onChangeText={setFullName}
         icon="person-outline"
+        editable={!loading}
       />
 
       <CustomInput
@@ -54,6 +67,16 @@ const RegisterScreen: React.FC<any> = ({ navigation }) => {
         onChangeText={setEmail}
         keyboardType="email-address"
         icon="mail-outline"
+        editable={!loading}
+      />
+
+      <CustomInput
+        placeholder="Phone"
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
+        icon="call-outline"
+        editable={!loading}
       />
 
       <CustomInput
@@ -62,6 +85,7 @@ const RegisterScreen: React.FC<any> = ({ navigation }) => {
         onChangeText={setPassword}
         secureTextEntry
         icon="lock-closed-outline"
+        editable={!loading}
       />
 
       <CustomInput
@@ -70,6 +94,7 @@ const RegisterScreen: React.FC<any> = ({ navigation }) => {
         onChangeText={setConfirmPassword}
         secureTextEntry
         icon="lock-closed-outline"
+        editable={!loading}
       />
 
       <CustomButton
@@ -80,7 +105,7 @@ const RegisterScreen: React.FC<any> = ({ navigation }) => {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={loading}>
           <Text style={styles.link}>Login</Text>
         </TouchableOpacity>
       </View>

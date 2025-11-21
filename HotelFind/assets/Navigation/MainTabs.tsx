@@ -9,7 +9,11 @@ import ProfileScreen from '../../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-const MainTabs: React.FC = () => {
+interface MainTabsProps {
+  setIsLoggedIn: (value: boolean) => void;
+}
+
+const MainTabs: React.FC<MainTabsProps> = ({ setIsLoggedIn }) => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -31,7 +35,11 @@ const MainTabs: React.FC = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        initialParams={{ setIsLoggedIn }}
+      />
     </Tab.Navigator>
   );
 };

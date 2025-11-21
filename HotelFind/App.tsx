@@ -20,7 +20,11 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      {isLoggedIn ? <MainTabs /> : <AuthStack />}
+      {isLoggedIn ? (
+        <MainTabs setIsLoggedIn={setIsLoggedIn} />
+      ) : (
+        <AuthStack setIsLoggedIn={setIsLoggedIn} />
+      )}
     </NavigationContainer>
   );
 }

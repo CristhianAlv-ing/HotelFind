@@ -6,7 +6,11 @@ import { colors } from '../../theme/colors';
 
 const Stack = createNativeStackNavigator();
 
-const AuthStack: React.FC = () => {
+interface AuthStackProps {
+  setIsLoggedIn: (value: boolean) => void;
+}
+
+const AuthStack: React.FC<AuthStackProps> = ({ setIsLoggedIn }) => {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -14,8 +18,16 @@ const AuthStack: React.FC = () => {
         cardStyle: { backgroundColor: colors.pureWhite },
       }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        initialParams={{ setIsLoggedIn }}
+      />
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        initialParams={{ setIsLoggedIn }}
+      />
     </Stack.Navigator>
   );
 };

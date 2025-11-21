@@ -5,14 +5,17 @@ import { colors } from '../theme/colors';
 
 interface CustomInputProps extends TextInputProps {
   icon?: keyof typeof Ionicons.glyphMap;
+  showIcon?: boolean;
 }
 
-export const CustomInput: React.FC<CustomInputProps> = ({ icon, ...props }) => {
+export const CustomInput: React.FC<CustomInputProps> = ({ icon, showIcon = true, ...props }) => {
   return (
     <View style={styles.container}>
-      {icon && <Ionicons name={icon} size={20} color={colors.vibrantOrange} />}
+      {showIcon && icon && (
+        <Ionicons name={icon} size={20} color={colors.vibrantOrange} />
+      )}
       <TextInput
-        style={styles.input}
+        style={[styles.input, { marginLeft: showIcon && icon ? 10 : 0 }]}
         placeholderTextColor={colors.darkGray}
         {...props}
       />
@@ -20,6 +23,24 @@ export const CustomInput: React.FC<CustomInputProps> = ({ icon, ...props }) => {
   );
 };
 
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: colors.deepBlue,
+    paddingRight: 50,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: colors.darkGray,
+  },
+});
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
