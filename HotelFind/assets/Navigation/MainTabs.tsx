@@ -1,5 +1,4 @@
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -9,7 +8,6 @@ import SearchScreen from '../../screens/SearchScreen';
 import ProfileScreen from '../../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
 
 const MainTabs: React.FC = () => {
   return (
@@ -17,31 +15,18 @@ const MainTabs: React.FC = () => {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
-
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Search') {
-            iconName = focused ? 'search' : 'search-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          }
-
+          if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
+          else if (route.name === 'Search') iconName = focused ? 'search' : 'search-outline';
+          else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: colors.vibrantOrange,
         tabBarInactiveTintColor: colors.darkGray,
-        tabBarStyle: {
-          backgroundColor: colors.pureWhite,
-          borderTopColor: colors.darkGray,
-        },
+        tabBarStyle: { backgroundColor: colors.pureWhite, borderTopColor: colors.darkGray },
         headerShown: true,
-        headerStyle: {
-          backgroundColor: colors.deepBlue,
-        },
+        headerStyle: { backgroundColor: colors.deepBlue },
         headerTintColor: colors.pureWhite,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
+        headerTitleStyle: { fontWeight: 'bold' },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
