@@ -1,10 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useApp } from '../context/AppContext';
 import { colors } from '../theme/colors';
+import { lightTheme, darkTheme } from '../theme/themes';
+import { getTranslation } from '../utils/translations';
 
-const ProfileScreen: React.FC<any> = ({ route }) => {
+const ProfileScreen: React.FC<any> = ({ route, navigation }) => {
   const { setIsLoggedIn } = route.params;
+  const { language, theme } = useApp();
+  const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -19,33 +24,53 @@ const ProfileScreen: React.FC<any> = ({ route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <View style={styles.profileHeader}>
         <Ionicons name="person-circle" size={80} color={colors.vibrantOrange} />
-        <Text style={styles.name}>John Doe</Text>
-        <Text style={styles.email}>john@example.com</Text>
+        <Text style={[styles.name, { color: currentTheme.text }]}>John Doe</Text>
+        <Text style={[styles.email, { color: currentTheme.secondaryText }]}>
+          john@example.com
+        </Text>
       </View>
 
       <View style={styles.menu}>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={[styles.menuItem, { borderBottomColor: currentTheme.border }]}
+          onPress={() => navigation.navigate('Settings')}
+        >
           <Ionicons name="settings-outline" size={24} color={colors.deepBlue} />
-          <Text style={styles.menuText}>Settings</Text>
+          <Text style={[styles.menuText, { color: currentTheme.text }]}>
+            {getTranslation(language, 'settings')}
+          </Text>
+          <Ionicons name="chevron-forward" size={24} color={currentTheme.secondaryText} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={[styles.menuItem, { borderBottomColor: currentTheme.border }]}
+        >
           <Ionicons name="bookmark-outline" size={24} color={colors.deepBlue} />
-          <Text style={styles.menuText}>Saved Hotels</Text>
+          <Text style={[styles.menuText, { color: currentTheme.text }]}>
+            {getTranslation(language, 'savedHotels')}
+          </Text>
+          <Ionicons name="chevron-forward" size={24} color={currentTheme.secondaryText} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={[styles.menuItem, { borderBottomColor: currentTheme.border }]}
+        >
           <Ionicons name="help-circle-outline" size={24} color={colors.deepBlue} />
-          <Text style={styles.menuText}>Help & Support</Text>
+          <Text style={[styles.menuText, { color: currentTheme.text }]}>
+            {getTranslation(language, 'helpSupport')}
+          </Text>
+          <Ionicons name="chevron-forward" size={24} color={currentTheme.secondaryText} />
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={24} color={colors.pureWhite} />
-        <Text style={styles.logoutText}>Logout</Text>
+        <Text style={styles.logoutText}>
+          {getTranslation(language, 'logout')}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -54,7 +79,6 @@ const ProfileScreen: React.FC<any> = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.pureWhite,
     padding: 20,
   },
   profileHeader: {
@@ -65,12 +89,10 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.deepBlue,
     marginTop: 12,
   },
   email: {
     fontSize: 14,
-    color: colors.darkGray,
     marginTop: 4,
   },
   menu: {
@@ -81,12 +103,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   menuText: {
     marginLeft: 16,
     fontSize: 16,
-    color: colors.darkGray,
+    flex: 1,
   },
   logoutButton: {
     flexDirection: 'row',

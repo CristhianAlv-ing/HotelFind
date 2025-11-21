@@ -1,3 +1,3 @@
 import { registerRootComponent } from 'expo';
-import App from './App'; // o './src/App' según dónde esté tu App.tsx
+import App from './App';
 registerRootComponent(App);

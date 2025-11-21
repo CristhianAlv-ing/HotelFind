@@ -41,22 +41,3 @@ const styles = StyleSheet.create({
     color: colors.darkGray,
   },
 });
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.deepBlue,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 12,
-    marginLeft: 10,
-    fontSize: 16,
-    color: colors.darkGray,
-  },
-});

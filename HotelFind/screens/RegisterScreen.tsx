@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
+import { CountryPicker } from '../components/CountryPicker';
+import { useApp } from '../context/AppContext';
 import { colors } from '../theme/colors';
+import { lightTheme, darkTheme } from '../theme/themes';
+import { getTranslation } from '../utils/translations';
+import { countries, Country, getPhonePlaceholder } from '../utils/countries';
 
 const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
   const [fullName, setFullName] = useState('');
@@ -10,103 +16,293 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<Country>(
+    countries.find(c => c.code === 'HN') || countries[0]
+  );
   const { setIsLoggedIn } = route.params;
+  const { language, theme } = useApp();
+
+  const currentTheme = theme === 'light' ? lightTheme : darkTheme;
+
+  const validateEmail = (text: string) => {
+    setEmail(text);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (text.length > 0 && !emailRegex.test(text)) {
+      setEmailError(getTranslation(language, 'emailInvalid') || 'Email inválido');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const formatPhoneNumber = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+
+    let maxLength = 10;
+    if (selectedCountry.dialCode === '+55') maxLength = 11;
+    else if (selectedCountry.dialCode === '+52') maxLength = 10;
+    else if (selectedCountry.dialCode === '+504') maxLength = 8;
+    else if (selectedCountry.dialCode.startsWith('+1')) maxLength = 10;
+    else maxLength = 12;
+
+    if (cleaned.length > maxLength) {
+      return;
+    }
+
+    let formatted = '';
+
+    if (cleaned.length > 0) {
+      if (selectedCountry.dialCode === '+504') {
+        if (cleaned.length <= 4) {
+          formatted = cleaned;
+        } else {
+          formatted = cleaned.slice(0, 4) + ' - ' + cleaned.slice(4);
+        }
+      } else if (selectedCountry.dialCode === '+55') {
+        if (cleaned.length <= 2) {
+          formatted = cleaned;
+        } else if (cleaned.length <= 7) {
+          formatted = cleaned.slice(0, 2) + ' ' + cleaned.slice(2);
+        } else {
+          formatted = cleaned.slice(0, 2) + ' ' + cleaned.slice(2, 7) + ' - ' + cleaned.slice(7);
+        }
+      } else if (selectedCountry.dialCode === '+52') {
+        if (cleaned.length <= 3) {
+          formatted = cleaned;
+        } else if (cleaned.length <= 6) {
+          formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
+        } else {
+          formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3, 6) + ' ' + cleaned.slice(6);
+        }
+      } else {
+        if (cleaned.length <= 3) {
+          formatted = cleaned;
+        } else if (cleaned.length <= 6) {
+          formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
+        } else {
+          formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3, 6) + ' ' + cleaned.slice(6);
+        }
+      }
+    }
+
+    setPhone(formatted);
+    validatePhone(formatted);
+  };
+
+  const validatePhone = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+
+    let minLength = 8;
+    let maxLength = 10;
+
+    if (selectedCountry.dialCode === '+55') {
+      minLength = 10;
+      maxLength = 11;
+    } else if (selectedCountry.dialCode === '+52') {
+      minLength = 10;
+      maxLength = 10;
+    } else if (selectedCountry.dialCode === '+504') {
+      minLength = 8;
+      maxLength = 8;
+    } else if (selectedCountry.dialCode.startsWith('+1')) {
+      minLength = 10;
+      maxLength = 10;
+    }
+
+    if (text.length > 0 && cleaned.length < minLength) {
+      setPhoneError(getTranslation(language, 'phoneInvalid') || 'Teléfono no válido');
+    } else if (cleaned.length > maxLength) {
+      setPhoneError(getTranslation(language, 'phoneInvalid') || 'Teléfono no válido');
+    } else if (text.length > 0 && cleaned.length >= minLength && cleaned.length <= maxLength) {
+      setPhoneError('');
+    } else {
+      setPhoneError('');
+    }
+  };
+
+  const handleCountrySelect = (country: Country) => {
+    setSelectedCountry(country);
+    setPhone('');
+    setPhoneError('');
+  };
 
   const handleRegister = () => {
     if (!fullName || !email || !phone || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Error', getTranslation(language, 'fillAllFields') || 'Por favor completa todos los campos');
       return;
     }
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', getTranslation(language, 'emailInvalid') || 'Email inválido');
       return;
     }
 
-    if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+    const cleanedPhone = phone.replace(/\D/g, '');
+
+    if (cleanedPhone.length === 0 || phoneError !== '') {
+      Alert.alert('Error', getTranslation(language, 'phoneInvalid') || 'Teléfono no válido');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert('Error', getTranslation(language, 'passwordMismatch') || 'Las contraseñas no coinciden');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert('Error', getTranslation(language, 'passwordTooShort') || 'La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
     setLoading(true);
-    // Simulación de API call
     setTimeout(() => {
-      Alert.alert('Success', 'Account created successfully! Welcome to HotelFind.');
+      Alert.alert(
+        'Éxito',
+        `${getTranslation(language, 'accountCreated')}\n${getTranslation(language, 'country')}: ${selectedCountry.name}\n${getTranslation(language, 'phone')}: ${selectedCountry.dialCode} ${cleanedPhone}`
+      );
       setIsLoggedIn(true);
       setLoading(false);
     }, 1500);
   };
 
+  const phonePlaceholder = getPhonePlaceholder(selectedCountry.dialCode);
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Join HotelFind today</Text>
+    <ScrollView
+      style={[styles.container, { backgroundColor: currentTheme.background }]}
+      contentContainerStyle={{ paddingBottom: 24 }}
+    >
+      <Text style={[styles.title, { color: currentTheme.text }]}>
+        {getTranslation(language, 'createAccount')}
+      </Text>
+      <Text style={[styles.subtitle, { color: currentTheme.secondaryText }]}>
+        {getTranslation(language, 'joinHotelFind')}
+      </Text>
 
-      <CustomInput
-        placeholder="Full Name"
-        value={fullName}
-        onChangeText={setFullName}
-        icon="person-outline"
-        editable={!loading}
-      />
+      <View style={styles.inputWrapper}>
+        <CustomInput
+          placeholder={getTranslation(language, 'fullName')}
+          value={fullName}
+          onChangeText={setFullName}
+          icon="person-outline"
+          editable={!loading}
+        />
+      </View>
 
-      <CustomInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        icon="mail-outline"
-        editable={!loading}
-      />
+      <View style={styles.inputWrapper}>
+        <CustomInput
+          placeholder="Email"
+          value={email}
+          onChangeText={validateEmail}
+          keyboardType="email-address"
+          icon="mail-outline"
+          editable={!loading}
+        />
+        {emailError ? (
+          <Text style={styles.errorText}>{emailError}</Text>
+        ) : null}
+      </View>
 
-      <CustomInput
-        placeholder="Phone"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-        icon="call-outline"
-        editable={!loading}
-      />
+      <View style={styles.countrySection}>
+        <Text style={[styles.sectionLabel, { color: currentTheme.text }]}>
+          {getTranslation(language, 'selectCountry')}
+        </Text>
+        <CountryPicker
+          selectedCountry={selectedCountry}
+          onSelectCountry={handleCountrySelect}
+        />
+      </View>
 
-      <CustomInput
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        icon="lock-closed-outline"
-        editable={!loading}
-      />
+      <View style={styles.inputWrapper}>
+        <View style={[styles.phoneInputContainer, { borderColor: colors.deepBlue, backgroundColor: currentTheme.inputBackground }]}>
+          <Text style={styles.dialCodeStatic}>{selectedCountry.dialCode}</Text>
+          <TextInput
+            style={[styles.phoneInput, { color: currentTheme.text }]}
+            placeholder={phonePlaceholder.replace(selectedCountry.dialCode + ' ', '')}
+            placeholderTextColor={currentTheme.secondaryText}
+            value={phone}
+            onChangeText={formatPhoneNumber}
+            keyboardType="phone-pad"
+            editable={!loading}
+          />
+        </View>
+        {phoneError ? (
+          <Text style={styles.errorText}>{phoneError}</Text>
+        ) : phone.length > 0 ? (
+          <Text style={styles.successText}>✓ {getTranslation(language, 'validPhone')}</Text>
+        ) : null}
+      </View>
 
-      <CustomInput
-        placeholder="Confirm Password"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-        icon="lock-closed-outline"
-        editable={!loading}
-      />
+      <View style={styles.passwordWrapper}>
+        <View style={styles.passwordContainer}>
+          <CustomInput
+            placeholder={getTranslation(language, 'password')}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            icon="lock-closed-outline"
+            editable={!loading}
+            showIcon={false}
+          />
+          <TouchableOpacity
+            style={styles.eyeIconContainer}
+            onPress={() => setShowPassword(!showPassword)}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={showPassword ? 'eye' : 'eye-off'}
+              size={22}
+              color={colors.vibrantOrange}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.passwordWrapper}>
+        <View style={styles.passwordContainer}>
+          <CustomInput
+            placeholder={getTranslation(language, 'confirmPassword')}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={!showConfirmPassword}
+            icon="lock-closed-outline"
+            editable={!loading}
+            showIcon={false}
+          />
+          <TouchableOpacity
+            style={styles.eyeIconContainer}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={showConfirmPassword ? 'eye' : 'eye-off'}
+              size={22}
+              color={colors.vibrantOrange}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <CustomButton
-        title={loading ? 'Creating Account...' : 'Sign Up'}
+        title={loading ? getTranslation(language, 'creatingAccount') : getTranslation(language, 'register')}
         onPress={handleRegister}
-        disabled={loading}
+        disabled={loading || emailError !== '' || phoneError !== ''}
       />
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Already have an account? </Text>
+        <Text style={[styles.footerText, { color: currentTheme.text }]}>
+          {getTranslation(language, 'haveAccount')}
+        </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={loading}>
-          <Text style={styles.link}>Login</Text>
+          <Text style={styles.link}>{getTranslation(language, 'login')}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -116,22 +312,80 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.pureWhite,
     padding: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: colors.deepBlue,
     marginBottom: 8,
     textAlign: 'center',
     marginTop: 20,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.darkGray,
     marginBottom: 30,
     textAlign: 'center',
+  },
+  inputWrapper: {
+    marginBottom: 16,
+  },
+  countrySection: {
+    marginBottom: 16,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 15,
+  },
+  dialCodeStatic: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.vibrantOrange,
+    marginRight: 8,
+    paddingVertical: 12,
+  },
+  phoneInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 15,
+    fontWeight: '500',
+  },
+  successText: {
+    color: '#34C759',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 15,
+    fontWeight: '500',
+  },
+  passwordWrapper: {
+    marginBottom: 16,
+  },
+  passwordContainer: {
+    position: 'relative',
+    width: '100%',
+  },
+  eyeIconContainer: {
+    position: 'absolute',
+    right: 12,
+    top: 0,
+    bottom: 0,
+    width: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
   footer: {
     flexDirection: 'row',
@@ -139,13 +393,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   footerText: {
-    color: colors.darkGray,
     fontSize: 14,
   },
   link: {
     color: colors.vibrantOrange,
-    fontSize: 14,
     fontWeight: 'bold',
+    fontSize: 14,
   },
 });
 
