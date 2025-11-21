@@ -1,12 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors } from '../theme/color';
 
 const ProfileScreen = () => {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>User Profile</Text>
-            {/* Additional profile information can be added here */}
         </View>
     );
 };
@@ -16,11 +15,11 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.PureWhite,
+        backgroundColor: colors.pureWhite,
     },
     title: {
         fontSize: 24,
-        color: colors.DarkGray,
+        color: colors.darkGray,
     },
 });
 

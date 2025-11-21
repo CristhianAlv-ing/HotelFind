@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors } from '../theme/color';
 
 const HotelCard = ({ hotel }) => {
     return (
@@ -14,11 +14,11 @@ const HotelCard = ({ hotel }) => {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: colors.PureWhite,
+        backgroundColor: colors.pureWhite,
         borderRadius: 10,
         padding: 15,
         margin: 10,
-        shadowColor: colors.DarkGray,
+        shadowColor: colors.darkGray,
         shadowOffset: {
             width: 0,
             height: 2,
@@ -30,16 +30,16 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: colors.DeepBlue,
+        color: colors.deepBlue,
     },
     description: {
         fontSize: 14,
-        color: colors.DarkGray,
+        color: colors.darkGray,
     },
     price: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: colors.GoldenYellow,
+        color: colors.goldenYellow,
     },
 });
 

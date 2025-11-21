@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors } from '../theme/color';
 
 const HomeScreen = () => {
     return (
@@ -16,16 +16,16 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.PureWhite,
+        backgroundColor: colors.pureWhite,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: colors.DeepBlue,
+        color: colors.deepBlue,
     },
     subtitle: {
         fontSize: 16,
-        color: colors.DarkGray,
+        color: colors.darkGray,
     },
 });
 

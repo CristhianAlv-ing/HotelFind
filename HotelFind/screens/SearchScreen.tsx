@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, Button } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors } from '../theme/color'
 
 const SearchScreen = () => {
     return (
@@ -9,9 +9,9 @@ const SearchScreen = () => {
             <TextInput 
                 style={styles.input} 
                 placeholder="Enter location" 
-                placeholderTextColor={colors.DarkGray} 
+                placeholderTextColor={colors.darkGray} 
             />
-            <Button title="Search" onPress={() => {}} color={colors.VibrantOrange} />
+            <Button title="Search" onPress={() => {}} color={colors.vibrantOrange} />
         </View>
     );
 };
@@ -21,16 +21,16 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.PureWhite,
+        backgroundColor: colors.pureWhite,
     },
     title: {
         fontSize: 24,
-        color: colors.DeepBlue,
+        color: colors.deepBlue,
         marginBottom: 20,
     },
     input: {
         height: 40,
-        borderColor: colors.DarkGray,
+        borderColor: colors.darkGray,
         borderWidth: 1,
         marginBottom: 20,
         paddingHorizontal: 10,

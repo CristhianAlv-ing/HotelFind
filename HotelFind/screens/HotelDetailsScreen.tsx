@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors } from '../theme/color';
 
 const HotelDetailsScreen = ({ route }) => {
     const { hotel } = route.params;
@@ -18,7 +18,7 @@ const HotelDetailsScreen = ({ route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.PureWhite,
+        backgroundColor: colors.pureWhite,
         padding: 16,
     },
     image: {
@@ -29,18 +29,18 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: colors.DeepBlue,
+        color: colors.deepBlue,
         marginVertical: 10,
     },
     description: {
         fontSize: 16,
-        color: colors.DarkGray,
+        color: colors.darkGray,
         marginVertical: 5,
     },
     price: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: colors.GoldenYellow,
+        color: colors.goldenYellow,
         marginTop: 10,
     },
 });
