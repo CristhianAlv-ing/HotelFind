@@ -1,42 +1,30 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps } from 'react-native';
 import { colors } from '../theme/colors';
 
-interface CustomButtonProps {
+interface CustomButtonProps extends TouchableOpacityProps {
   title: string;
-  onPress: () => void;
-  color?: string;
-  textColor?: string;
 }
 
-const CustomButton: React.FC<CustomButtonProps> = ({ title, onPress, color = colors.vibrantOrange, textColor = colors.pureWhite }) => {
+export const CustomButton: React.FC<CustomButtonProps> = ({ title, ...props }) => {
   return (
-    <TouchableOpacity style={[styles.button, { backgroundColor: color }]} onPress={onPress}>
-      <Text style={[styles.buttonText, { color: textColor }]}>{title}</Text>
+    <TouchableOpacity style={styles.button} {...props}>
+      <Text style={styles.text}>{title}</Text>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    backgroundColor: colors.vibrantOrange,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: colors.darkGray,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 2.5,
+    marginTop: 10,
   },
-  buttonText: {
-    fontSize: 16,
+  text: {
+    color: colors.pureWhite,
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });
-
-export default CustomButton;
