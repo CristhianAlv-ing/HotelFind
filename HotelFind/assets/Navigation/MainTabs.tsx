@@ -1,12 +1,12 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import HomeScreen from '../screens/HomeScreen';
-import SearchScreen from '../screens/SearchScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import { createNativeBottomTabNavigator } from '@react-navigation/native-bottom-tabs';
+import HomeScreen from '../../screens/HomeScreen';
+import SearchScreen from '../../screens/SearchScreen';
+import ProfileScreen from '../../screens/ProfileScreen';
 import { Ionicons } from '@expo/vector-icons';
-import colors from '../theme/colors';
+import { colors } from '../../theme/color';
 
-const Tab = createBottomTabNavigator();
+const Tab = createNativeBottomTabNavigator();
 
 const MainTabs = () => {
   return (
@@ -25,10 +25,10 @@ const MainTabs = () => {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: colors.VibrantOrange,
-        tabBarInactiveTintColor: colors.DarkGray,
+        tabBarActiveTintColor: colors.vibrantOrange,
+        tabBarInactiveTintColor: colors.darkGray,
         tabBarStyle: {
-          backgroundColor: colors.PureWhite,
+          backgroundColor: colors.pureWhite,
         },
       })}
     >

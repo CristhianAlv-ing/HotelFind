@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextInput, View, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors } from '../theme/color';
 
 interface CustomInputProps {
   placeholder: string;
@@ -18,7 +18,7 @@ const CustomInput: React.FC<CustomInputProps> = ({ placeholder, value, onChangeT
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={secureTextEntry}
-        placeholderTextColor={colors.DarkGray}
+        placeholderTextColor={colors.darkGray}
       />
     </View>
   );
@@ -30,12 +30,12 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    borderColor: colors.DeepBlue,
+    borderColor: colors.deepBlue,
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
-    backgroundColor: colors.PureWhite,
-    color: colors.DarkGray,
+    backgroundColor: colors.pureWhite,
+    color: colors.darkGray,
   },
 });
 
