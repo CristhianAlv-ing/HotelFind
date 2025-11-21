@@ -1,10 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/color';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { colors } from '../theme/colors';
 
-const HotelCard = ({ hotel }) => {
+interface Hotel {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image?: string;
+}
+
+interface Props {
+  hotel: Hotel;
+}
+
+const HotelCard: React.FC<Props> = ({ hotel }) => {
     return (
         <View style={styles.card}>
+            {hotel.image && <Image source={{ uri: hotel.image }} style={styles.image} />}
             <Text style={styles.title}>{hotel.name}</Text>
             <Text style={styles.description}>{hotel.description}</Text>
             <Text style={styles.price}>${hotel.price} per night</Text>
@@ -27,6 +40,12 @@ const styles = StyleSheet.create({
         shadowRadius: 3.5,
         elevation: 5,
     },
+    image: {
+        width: '100%',
+        height: 150,
+        borderRadius: 10,
+        marginBottom: 10,
+    },
     title: {
         fontSize: 18,
         fontWeight: 'bold',
@@ -35,6 +54,7 @@ const styles = StyleSheet.create({
     description: {
         fontSize: 14,
         color: colors.darkGray,
+        marginVertical: 5,
     },
     price: {
         fontSize: 16,

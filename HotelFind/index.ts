@@ -1,5 +1,3 @@
-import { AppRegistry } from 'react-native';
-import App from './App';
-import { name as appName } from
-
-AppRegistry.registerComponent(appName, () => App);
+import { registerRootComponent } from 'expo';
+import App from './App'; // o './src/App' según dónde esté tu App.tsx
+registerRootComponent(App);

@@ -1,19 +1,22 @@
 import React from 'react';
-import { createNativeBottomTabNavigator } from '@react-navigation/native-bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../../theme/colors';
+
 import HomeScreen from '../../screens/HomeScreen';
 import SearchScreen from '../../screens/SearchScreen';
 import ProfileScreen from '../../screens/ProfileScreen';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/color';
 
-const Tab = createNativeBottomTabNavigator();
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-const MainTabs = () => {
+const MainTabs: React.FC = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
+          let iconName: keyof typeof Ionicons.glyphMap = 'home';
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
@@ -29,6 +32,15 @@ const MainTabs = () => {
         tabBarInactiveTintColor: colors.darkGray,
         tabBarStyle: {
           backgroundColor: colors.pureWhite,
+          borderTopColor: colors.darkGray,
+        },
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: colors.deepBlue,
+        },
+        headerTintColor: colors.pureWhite,
+        headerTitleStyle: {
+          fontWeight: 'bold',
         },
       })}
     >

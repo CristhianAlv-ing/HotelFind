@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { colors } from '../theme/color';
+import { colors } from '../theme/colors';
 
 const LoginScreen = () => {
     return (
