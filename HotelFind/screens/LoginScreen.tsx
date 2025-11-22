@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
-import { useApp } from '../context/AppContext';
 import { colors } from '../theme/colors';
-import { lightTheme, darkTheme } from '../theme/themes';
-import { getTranslation } from '../utils/translations';
 
 const LoginScreen: React.FC<any> = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
@@ -15,16 +12,13 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const { setIsLoggedIn } = route.params;
-  const { language, theme } = useApp();
-
-  const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
   const validateEmail = (text: string) => {
     setEmail(text);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (text.length > 0 && !emailRegex.test(text)) {
-      setEmailError(getTranslation(language, 'emailInvalid') || 'Email inválido');
+      setEmailError('Correo no válido');
     } else {
       setEmailError('');
     }
@@ -32,30 +26,28 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
 
   const handleLogin = () => {
     if (!email || !password) {
-      Alert.alert('Error', getTranslation(language, 'fillAllFields') || 'Por favor completa todos los campos');
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', getTranslation(language, 'emailInvalid') || 'Email inválido');
+      Alert.alert('Error', 'Correo no válido');
       return;
     }
 
     setLoading(true);
     setTimeout(() => {
-      Alert.alert('Éxito', getTranslation(language, 'loginSuccess') || 'Login exitoso');
+      Alert.alert('Success', 'Login successful! Welcome back.');
       setIsLoggedIn(true);
       setLoading(false);
     }, 1500);
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <Text style={[styles.title, { color: currentTheme.text }]}>HotelFind</Text>
-      <Text style={[styles.subtitle, { color: currentTheme.secondaryText }]}>
-        {getTranslation(language, 'welcomeBack')}
-      </Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>HotelFind</Text>
+      <Text style={styles.subtitle}>Welcome Back</Text>
 
       <View style={styles.inputWrapper}>
         <CustomInput
@@ -74,7 +66,7 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
       <View style={styles.passwordWrapper}>
         <View style={styles.passwordContainer}>
           <CustomInput
-            placeholder={getTranslation(language, 'password')}
+            placeholder="Password"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
@@ -98,17 +90,15 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
       </View>
 
       <CustomButton
-        title={loading ? getTranslation(language, 'loggingIn') : getTranslation(language, 'login')}
+        title={loading ? 'Logging in...' : 'Login'}
         onPress={handleLogin}
         disabled={loading || emailError !== ''}
       />
 
       <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: currentTheme.text }]}>
-          {getTranslation(language, 'noAccount')}
-        </Text>
+        <Text style={styles.footerText}>Don't have an account? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Register')} disabled={loading}>
-          <Text style={styles.link}>{getTranslation(language, 'signUp')}</Text>
+          <Text style={styles.link}>Sign Up</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -118,17 +108,20 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.pureWhite,
     padding: 20,
     justifyContent: 'center',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
+    color: colors.deepBlue,
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
+    color: colors.darkGray,
     marginBottom: 30,
     textAlign: 'center',
   },
@@ -165,6 +158,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   footerText: {
+    color: colors.darkGray,
     fontSize: 14,
   },
   link: {

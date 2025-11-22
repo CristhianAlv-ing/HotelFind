@@ -4,10 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { CountryPicker } from '../components/CountryPicker';
-import { useApp } from '../context/AppContext';
 import { colors } from '../theme/colors';
-import { lightTheme, darkTheme } from '../theme/themes';
-import { getTranslation } from '../utils/translations';
 import { countries, Country, getPhonePlaceholder } from '../utils/countries';
 
 const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
@@ -25,16 +22,13 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
     countries.find(c => c.code === 'HN') || countries[0]
   );
   const { setIsLoggedIn } = route.params;
-  const { language, theme } = useApp();
-
-  const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
   const validateEmail = (text: string) => {
     setEmail(text);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (text.length > 0 && !emailRegex.test(text)) {
-      setEmailError(getTranslation(language, 'emailInvalid') || 'Email inválido');
+      setEmailError('Correo no válido');
     } else {
       setEmailError('');
     }
@@ -115,9 +109,9 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
     }
 
     if (text.length > 0 && cleaned.length < minLength) {
-      setPhoneError(getTranslation(language, 'phoneInvalid') || 'Teléfono no válido');
+      setPhoneError(`Teléfono no válido (mín. ${minLength} dígitos)`);
     } else if (cleaned.length > maxLength) {
-      setPhoneError(getTranslation(language, 'phoneInvalid') || 'Teléfono no válido');
+      setPhoneError(`Teléfono no válido (máx. ${maxLength} dígitos)`);
     } else if (text.length > 0 && cleaned.length >= minLength && cleaned.length <= maxLength) {
       setPhoneError('');
     } else {
@@ -133,30 +127,30 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
 
   const handleRegister = () => {
     if (!fullName || !email || !phone || !password || !confirmPassword) {
-      Alert.alert('Error', getTranslation(language, 'fillAllFields') || 'Por favor completa todos los campos');
+      Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', getTranslation(language, 'emailInvalid') || 'Email inválido');
+      Alert.alert('Error', 'Correo no válido');
       return;
     }
 
     const cleanedPhone = phone.replace(/\D/g, '');
 
     if (cleanedPhone.length === 0 || phoneError !== '') {
-      Alert.alert('Error', getTranslation(language, 'phoneInvalid') || 'Teléfono no válido');
+      Alert.alert('Error', 'Teléfono no válido para ' + selectedCountry.name);
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', getTranslation(language, 'passwordMismatch') || 'Las contraseñas no coinciden');
+      Alert.alert('Error', 'Las contraseñas no coinciden');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', getTranslation(language, 'passwordTooShort') || 'La contraseña debe tener al menos 6 caracteres');
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
@@ -164,7 +158,7 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
     setTimeout(() => {
       Alert.alert(
         'Éxito',
-        `${getTranslation(language, 'accountCreated')}\n${getTranslation(language, 'country')}: ${selectedCountry.name}\n${getTranslation(language, 'phone')}: ${selectedCountry.dialCode} ${cleanedPhone}`
+        `¡Cuenta creada exitosamente!\nPaís: ${selectedCountry.name}\nTeléfono: ${selectedCountry.dialCode} ${cleanedPhone}`
       );
       setIsLoggedIn(true);
       setLoading(false);
@@ -175,19 +169,15 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: currentTheme.background }]}
+      style={styles.container}
       contentContainerStyle={{ paddingBottom: 24 }}
     >
-      <Text style={[styles.title, { color: currentTheme.text }]}>
-        {getTranslation(language, 'createAccount')}
-      </Text>
-      <Text style={[styles.subtitle, { color: currentTheme.secondaryText }]}>
-        {getTranslation(language, 'joinHotelFind')}
-      </Text>
+      <Text style={styles.title}>Crear Cuenta</Text>
+      <Text style={styles.subtitle}>Únete a HotelFind hoy</Text>
 
       <View style={styles.inputWrapper}>
         <CustomInput
-          placeholder={getTranslation(language, 'fullName')}
+          placeholder="Nombre Completo"
           value={fullName}
           onChangeText={setFullName}
           icon="person-outline"
@@ -197,7 +187,7 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
 
       <View style={styles.inputWrapper}>
         <CustomInput
-          placeholder="Email"
+          placeholder="Correo Electrónico"
           value={email}
           onChangeText={validateEmail}
           keyboardType="email-address"
@@ -210,9 +200,7 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
       </View>
 
       <View style={styles.countrySection}>
-        <Text style={[styles.sectionLabel, { color: currentTheme.text }]}>
-          {getTranslation(language, 'selectCountry')}
-        </Text>
+        <Text style={styles.sectionLabel}>Selecciona tu país:</Text>
         <CountryPicker
           selectedCountry={selectedCountry}
           onSelectCountry={handleCountrySelect}
@@ -220,12 +208,12 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
       </View>
 
       <View style={styles.inputWrapper}>
-        <View style={[styles.phoneInputContainer, { borderColor: colors.deepBlue, backgroundColor: currentTheme.inputBackground }]}>
+        <View style={styles.phoneInputContainer}>
           <Text style={styles.dialCodeStatic}>{selectedCountry.dialCode}</Text>
           <TextInput
-            style={[styles.phoneInput, { color: currentTheme.text }]}
+            style={styles.phoneInput}
             placeholder={phonePlaceholder.replace(selectedCountry.dialCode + ' ', '')}
-            placeholderTextColor={currentTheme.secondaryText}
+            placeholderTextColor={colors.darkGray}
             value={phone}
             onChangeText={formatPhoneNumber}
             keyboardType="phone-pad"
@@ -235,14 +223,14 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
         {phoneError ? (
           <Text style={styles.errorText}>{phoneError}</Text>
         ) : phone.length > 0 ? (
-          <Text style={styles.successText}>✓ {getTranslation(language, 'validPhone')}</Text>
+          <Text style={styles.successText}>✓ Teléfono válido</Text>
         ) : null}
       </View>
 
       <View style={styles.passwordWrapper}>
         <View style={styles.passwordContainer}>
           <CustomInput
-            placeholder={getTranslation(language, 'password')}
+            placeholder="Contraseña"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
@@ -268,7 +256,7 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
       <View style={styles.passwordWrapper}>
         <View style={styles.passwordContainer}>
           <CustomInput
-            placeholder={getTranslation(language, 'confirmPassword')}
+            placeholder="Confirmar Contraseña"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry={!showConfirmPassword}
@@ -292,17 +280,15 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
       </View>
 
       <CustomButton
-        title={loading ? getTranslation(language, 'creatingAccount') : getTranslation(language, 'register')}
+        title={loading ? 'Creando Cuenta...' : 'Registrarse'}
         onPress={handleRegister}
         disabled={loading || emailError !== '' || phoneError !== ''}
       />
 
       <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: currentTheme.text }]}>
-          {getTranslation(language, 'haveAccount')}
-        </Text>
+        <Text style={styles.footerText}>¿Ya tienes cuenta? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={loading}>
-          <Text style={styles.link}>{getTranslation(language, 'login')}</Text>
+          <Text style={styles.link}>Inicia Sesión</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -312,17 +298,20 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.pureWhite,
     padding: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
+    color: colors.deepBlue,
     marginBottom: 8,
     textAlign: 'center',
     marginTop: 20,
   },
   subtitle: {
     fontSize: 16,
+    color: colors.darkGray,
     marginBottom: 30,
     textAlign: 'center',
   },
@@ -335,13 +324,16 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 14,
     fontWeight: '600',
+    color: colors.deepBlue,
     marginBottom: 8,
   },
   phoneInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#F5F5F5',
     borderRadius: 10,
     borderWidth: 1,
+    borderColor: colors.deepBlue,
     paddingHorizontal: 15,
   },
   dialCodeStatic: {
@@ -355,6 +347,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     fontSize: 16,
+    color: colors.darkGray,
   },
   errorText: {
     color: '#FF3B30',
@@ -393,6 +386,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   footerText: {
+    color: colors.darkGray,
     fontSize: 14,
   },
   link: {
