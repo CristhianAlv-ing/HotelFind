@@ -157,7 +157,7 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
     setLoading(true);
     setTimeout(() => {
       Alert.alert(
-        'Éxito',
+        'Bien',
         `¡Cuenta creada exitosamente!\nPaís: ${selectedCountry.name}\nTeléfono: ${selectedCountry.dialCode} ${cleanedPhone}`
       );
       setIsLoggedIn(true);
@@ -286,7 +286,7 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
       />
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>¿Ya tienes cuenta? </Text>
+        <Text style={styles.footerText}>¿Ya tienes una cuenta? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={loading}>
           <Text style={styles.link}>Inicia Sesión</Text>
         </TouchableOpacity>

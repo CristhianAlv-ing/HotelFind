@@ -9,7 +9,7 @@ const HotelDetailsScreen: React.FC<any> = ({ route }) => {
   if (!hotel) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No hotel data available</Text>
+        <Text style={styles.emptyText}>No hay datos del hotel disponibles</Text>
       </View>
     );
   }

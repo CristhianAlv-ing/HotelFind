@@ -12,10 +12,10 @@ const ProfileScreen: React.FC<any> = ({ route, navigation }) => {
   const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert('Cerrar Sesión', 'Estas seguro que deseas cerrar sesión?', [
       { text: 'Cancel', onPress: () => {} },
       {
-        text: 'Logout',
+        text: 'Cerrar Sesión',
         onPress: () => {
           setIsLoggedIn(false);
         },
@@ -27,16 +27,16 @@ const ProfileScreen: React.FC<any> = ({ route, navigation }) => {
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <View style={styles.profileHeader}>
         <Ionicons name="person-circle" size={80} color={colors.vibrantOrange} />
-        <Text style={[styles.name, { color: currentTheme.text }]}>John Doe</Text>
+        <Text style={[styles.name, { color: currentTheme.text }]}>Cristhian Alvarez</Text>
         <Text style={[styles.email, { color: currentTheme.secondaryText }]}>
-          john@example.com
+          CristhianAlvarez@example.com
         </Text>
       </View>
 
       <View style={styles.menu}>
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomColor: currentTheme.border }]}
-          onPress={() => navigation.navigate('Settings')}
+          onPress={() => navigation.navigate('settings')}
         >
           <Ionicons name="settings-outline" size={24} color={colors.deepBlue} />
           <Text style={[styles.menuText, { color: currentTheme.text }]}>

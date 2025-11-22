@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {View,Text, StyleSheet,TouchableOpacity,Alert,ImageBackground,} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { colors } from '../theme/colors';
+import backgroundImage from '../assets/Login.png';
 
 const LoginScreen: React.FC<any> = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
@@ -26,7 +27,7 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
 
   const handleLogin = () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Error', 'Debes rellenar todos los campos');
       return;
     }
 
@@ -38,77 +39,83 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
 
     setLoading(true);
     setTimeout(() => {
-      Alert.alert('Success', 'Login successful! Welcome back.');
+      Alert.alert('Acceso Confirmado', 'Bienvenido de vuelta a HotelFind!');
       setIsLoggedIn(true);
       setLoading(false);
     }, 1500);
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>HotelFind</Text>
-      <Text style={styles.subtitle}>Welcome Back</Text>
+    <ImageBackground source={backgroundImage} style={styles.background} resizeMode="cover">
+      <View style={styles.overlay}>
+        <Text style={styles.title}>HotelFind</Text>
+        <Text style={styles.subtitle}>Bienvenido a tu mejor opción en hoteles!</Text>
 
-      <View style={styles.inputWrapper}>
-        <CustomInput
-          placeholder="Email"
-          value={email}
-          onChangeText={validateEmail}
-          keyboardType="email-address"
-          icon="mail-outline"
-          editable={!loading}
-        />
-        {emailError ? (
-          <Text style={styles.errorText}>{emailError}</Text>
-        ) : null}
-      </View>
-
-      <View style={styles.passwordWrapper}>
-        <View style={styles.passwordContainer}>
+        <View style={styles.inputWrapper}>
           <CustomInput
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            icon="lock-closed-outline"
+            placeholder="Correo"
+            value={email}
+            onChangeText={validateEmail}
+            keyboardType="email-address"
+            icon="mail-outline"
             editable={!loading}
-            showIcon={false}
           />
-          <TouchableOpacity
-            style={styles.eyeIconContainer}
-            onPress={() => setShowPassword(!showPassword)}
-            disabled={loading}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={showPassword ? 'eye' : 'eye-off'}
-              size={22}
-              color={colors.vibrantOrange}
+          {emailError ? (
+            <Text style={styles.errorText}>{emailError}</Text>
+          ) : null}
+        </View>
+
+        <View style={styles.passwordWrapper}>
+          <View style={styles.passwordContainer}>
+            <CustomInput
+              placeholder="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              icon="lock-closed-outline"
+              editable={!loading}
+              showIcon={false}
             />
+            <TouchableOpacity
+              style={styles.eyeIconContainer}
+              onPress={() => setShowPassword(!showPassword)}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={showPassword ? 'eye' : 'eye-off'}
+                size={22}
+                color={colors.vibrantOrange}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <CustomButton
+          title={loading ? 'Ingresando...' : 'Ingresar'}
+          onPress={handleLogin}
+          disabled={loading || emailError !== ''}
+        />
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Todavía no tienes una cuenta? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')} disabled={loading}>
+            <Text style={styles.link}>Registrarse</Text>
           </TouchableOpacity>
         </View>
       </View>
-
-      <CustomButton
-        title={loading ? 'Logging in...' : 'Login'}
-        onPress={handleLogin}
-        disabled={loading || emailError !== ''}
-      />
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Register')} disabled={loading}>
-          <Text style={styles.link}>Sign Up</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    backgroundColor: colors.pureWhite,
+    justifyContent: 'center',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.40)', // Mejora la legibilidad
     padding: 20,
     justifyContent: 'center',
   },

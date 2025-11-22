@@ -5,13 +5,13 @@ import { colors } from '../theme/colors'
 const SearchScreen = () => {
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Search for Hotels</Text>
+            <Text style={styles.title}>Buscar Hoteles</Text>
             <TextInput 
                 style={styles.input} 
-                placeholder="Enter location" 
+                placeholder="Introduzca su destino" 
                 placeholderTextColor={colors.darkGray} 
             />
-            <Button title="Search" onPress={() => {}} color={colors.vibrantOrange} />
+            <Button title="Buscar" onPress={() => {}} color={colors.vibrantOrange} />
         </View>
     );
 };

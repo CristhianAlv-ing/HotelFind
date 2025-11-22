@@ -81,7 +81,6 @@ const SettingsScreen: React.FC<any> = ({ navigation }) => {
         )}
       </View>
 
-      {/* Appearance Section */}
       <View style={[styles.section, { borderBottomColor: currentTheme.border }]}>
         <TouchableOpacity
           style={styles.header}
