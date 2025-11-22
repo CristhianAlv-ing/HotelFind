@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { AppProvider, useApp } from './context/AppContext';
-import MainTabs from './assets/Navigation/MainTabs';
-import AuthStack from './assets/Navigation/AuthStack';
+import { AppProvider, useApp } from './src/context/AppContext';
+import MainTabs from './src/Navigation/MainTabs';
+import AuthStack from './src/Navigation/AuthStack';
+import { Provider } from 'react-redux';
+import { store } from './src/redux/Store';
 
 const AppContent = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -46,8 +48,10 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <Provider store={store}>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </Provider>
   );
 }

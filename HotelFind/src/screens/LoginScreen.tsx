@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import {View,Text, StyleSheet,TouchableOpacity,Alert,ImageBackground,} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ImageBackground, } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { colors } from '../theme/colors';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../slices/userReducer';
 import backgroundImage from '../assets/Login.png';
 
 const LoginScreen: React.FC<any> = ({ navigation, route }) => {
+  const dispatch = useDispatch();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -39,9 +43,12 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
 
     setLoading(true);
     setTimeout(() => {
+      // Guardamos el usuario en Redux
+      dispatch(setUser({ name: 'Cristhian', email }));
       Alert.alert('Acceso Confirmado', 'Bienvenido de vuelta a HotelFind!');
       setIsLoggedIn(true);
       setLoading(false);
+      navigation.navigate('Home');
     }, 1500);
   };
 
@@ -60,9 +67,7 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
             icon="mail-outline"
             editable={!loading}
           />
-          {emailError ? (
-            <Text style={styles.errorText}>{emailError}</Text>
-          ) : null}
+          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
         </View>
 
         <View style={styles.passwordWrapper}>
@@ -176,3 +181,4 @@ const styles = StyleSheet.create({
 });
 
 export default LoginScreen;
+

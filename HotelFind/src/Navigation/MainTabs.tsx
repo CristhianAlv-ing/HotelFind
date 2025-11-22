@@ -2,15 +2,15 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useApp } from '../../context/AppContext';
-import { colors } from '../../theme/colors';
-import { lightTheme, darkTheme } from '../../theme/themes';
-import { getTranslation } from '../../utils/translations';
+import { useApp } from '../context/AppContext';
+import { colors } from '../theme/colors';
+import { lightTheme, darkTheme } from '../theme/themes';
+import { getTranslation } from '../utils/translations';
 
-import HomeScreen from '../../screens/HomeScreen';
-import SearchScreen from '../../screens/SearchScreen';
-import ProfileScreen from '../../screens/ProfileScreen';
-import SettingsScreen from '../../screens/SettingsScreen';
+import HomeScreen from '../screens/HomeScreen';
+import SearchScreen from '../screens/SearchScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
