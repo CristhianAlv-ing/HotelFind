@@ -6,7 +6,7 @@ import { CustomButton } from '../components/CustomButton';
 import { colors } from '../theme/colors';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../slices/userReducer';
-import backgroundImage from '../assets/Login.png';
+import backgroundImage from '../../assets/Login.png';
 
 const LoginScreen: React.FC<any> = ({ navigation, route }) => {
   const dispatch = useDispatch();

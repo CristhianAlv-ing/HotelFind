@@ -36,7 +36,7 @@ const ProfileScreen: React.FC<any> = ({ route, navigation }) => {
       <View style={styles.menu}>
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomColor: currentTheme.border }]}
-          onPress={() => navigation.navigate('settings')}
+          onPress={() => navigation.navigate('Settings')}
         >
           <Ionicons name="settings-outline" size={24} color={colors.deepBlue} />
           <Text style={[styles.menuText, { color: currentTheme.text }]}>
