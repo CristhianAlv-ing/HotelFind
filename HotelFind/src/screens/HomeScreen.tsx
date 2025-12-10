@@ -3,49 +3,54 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/Store';
+import { useApp } from '../context/AppContext';
+import { getTranslation } from '../utils/translations';
+import { colors } from '../theme/colors';
 
 const HomeScreen = () => {
+  const { language } = useApp();
   const user = useSelector((state: RootState) => state.user);
   const hotel = useSelector((state: RootState) => state.hotel);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bienvenido a HotelFind</Text>
-      <Text style={styles.subtitle}>Encuentra tu hotel perfecto para cada viaje!</Text>
+      <Text style={styles.title}>{getTranslation(language, 'welcomeBack')}</Text>
+      <Text style={styles.subtitle}>{getTranslation(language, 'joinHotelFind')}</Text>
 
       <View style={styles.userInfo}>
-        <Text style={styles.infoText}>🧑 Usuario: {user.name || 'Invitado'}</Text>
-        <Text style={styles.infoText}>📧 Correo: {user.email || 'No registrado'}</Text>
-        <Text style={styles.infoText}>🏨 Hotel seleccionado: {hotel.selectedHotel || 'Ninguno'}</Text>
+        <Text style={styles.infoText}>🧑 {getTranslation(language, 'profile')}: {user.name || 'Invitado'}</Text>
+        <Text style={styles.infoText}>📧 {user.email || 'No registrado'}</Text>
+        <Text style={styles.infoText}>🏨 {getTranslation(language, 'savedHotels')}: {hotel.selectedHotel || 'Ninguno'}</Text>
       </View>
 
       <View style={styles.reservationContainer}>
-        <Text style={styles.reservationTitle}>Opciones de Reservación</Text>
+        <Text style={styles.reservationTitle}>{getTranslation(language, 'home')}</Text>
 
         <TouchableOpacity style={styles.buttonPrimary}>
           <Icon name="hotel" size={22} color="#FFFFFF" style={styles.icon} />
-          <Text style={styles.buttonText}>Reservar Ahora</Text>
+          <Text style={styles.buttonText}>{getTranslation(language, 'reserveNow')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.buttonSecondary}>
           <Icon name="local-offer" size={22} color="#FFFFFF" style={styles.icon} />
-          <Text style={styles.buttonText}>Ver Ofertas</Text>
+          <Text style={styles.buttonText}>{getTranslation(language, 'viewOffers')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.buttonAccent}>
           <Icon name="restaurant" size={22} color="#FFFFFF" style={styles.icon} />
-          <Text style={styles.buttonText}>Paquetes Especiales</Text>
+          <Text style={styles.buttonText}>{getTranslation(language, 'specialPackages')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.buttonDark}>
           <Icon name="card-membership" size={22} color="#FFFFFF" style={styles.icon} />
-          <Text style={styles.buttonText}>Beneficios de Miembros</Text>
+          <Text style={styles.buttonText}>{getTranslation(language, 'membersBenefits')}</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
+// estilos (invarían)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -138,4 +143,3 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
-

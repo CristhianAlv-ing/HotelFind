@@ -13,7 +13,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Usamos tu ubicación para mostrar hoteles cercanos en el mapa."
+      },
+      "config": {
+        "googleMapsApiKey": "<AIzaSyCe3PTO532RHp0HLqSYD9W91dTUTRNmf3E>"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +27,16 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "<TU_GOOGLE_MAPS_API_KEY>"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -1,5 +1,14 @@
+// src/screens/RegisterScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, TextInput} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  TextInput,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
@@ -10,6 +19,7 @@ import { useDispatch } from 'react-redux';
 import { setUser } from '../slices/userReducer';
 import { useApp } from '../context/AppContext';
 import { getTranslation } from '../utils/translations';
+import { signUp } from '../services/supabase';
 
 const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -110,7 +120,7 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
     setPhoneError('');
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!fullName || !email || !phone || !password || !confirmPassword) {
       Alert.alert('Error', getTranslation(language, 'fillAllFields'));
       return;
@@ -138,20 +148,32 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
       return;
     }
 
-    setLoading(true);
-    setTimeout(() => {
-      // Guardamos el usuario en Redux
-      dispatch(setUser({ name: fullName, email }));
+    try {
+      setLoading(true);
+      // registramos en Supabase; guardamos metadata con nombre/pais/teléfono
+      const { user } = await signUp(email, password, {
+        name: fullName,
+        country: selectedCountry.name,
+        phone: `${selectedCountry.dialCode} ${cleanedPhone}`,
+      });
 
-      Alert.alert(
-        getTranslation(language, 'accountCreated'),
-        `${getTranslation(language, 'country')}: ${selectedCountry.name}\n${getTranslation(language, 'phone')}: ${selectedCountry.dialCode} ${cleanedPhone}`
-      );
+      if (!user) {
+        throw new Error('No user created');
+      }
+
+      // Guardamos en redux
+      dispatch(setUser({ name: (user.user_metadata?.name as string) || fullName, email: user.email || email }));
+
+      Alert.alert(getTranslation(language, 'accountCreated'), `${getTranslation(language, 'country')}: ${selectedCountry.name}\n${getTranslation(language, 'phone')}: ${selectedCountry.dialCode} ${cleanedPhone}`);
 
       if (typeof setIsLoggedIn === 'function') setIsLoggedIn(true);
-      setLoading(false);
       navigation.navigate('Home');
-    }, 1500);
+    } catch (error: any) {
+      console.error('Register error:', error);
+      Alert.alert('Error', error?.message || 'Could not create account');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const phonePlaceholder = getPhonePlaceholder(selectedCountry.dialCode);

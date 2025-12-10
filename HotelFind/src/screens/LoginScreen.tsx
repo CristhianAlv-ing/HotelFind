@@ -1,5 +1,6 @@
+// src/screens/LoginScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ImageBackground, } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
@@ -7,9 +8,13 @@ import { colors } from '../theme/colors';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../slices/userReducer';
 import backgroundImage from '../../assets/Login.png';
+import { useApp } from '../context/AppContext';
+import { getTranslation } from '../utils/translations';
+import { signIn } from '../services/supabase';
 
 const LoginScreen: React.FC<any> = ({ navigation, route }) => {
   const dispatch = useDispatch();
+  const { language } = useApp();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,44 +28,56 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (text.length > 0 && !emailRegex.test(text)) {
-      setEmailError('Correo no válido');
+      setEmailError(getTranslation(language, 'emailInvalid'));
     } else {
       setEmailError('');
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Debes rellenar todos los campos');
+      Alert.alert('Error', getTranslation(language, 'fillAllFields'));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Correo no válido');
+      Alert.alert('Error', getTranslation(language, 'emailInvalid'));
       return;
     }
 
-    setLoading(true);
-    setTimeout(() => {
-      // Guardamos el usuario en Redux
-      dispatch(setUser({ name: 'Cristhian', email }));
-      Alert.alert('Acceso Confirmado', 'Bienvenido de vuelta a HotelFind!');
-      setIsLoggedIn(true);
-      setLoading(false);
+    try {
+      setLoading(true);
+      const { user } = await signIn(email, password);
+      if (!user) {
+        // si no hay usuario en la respuesta, mostrar mensaje genérico
+        throw new Error('No user returned from signIn');
+      }
+
+      // Guardar en Redux (puedes ajustar el name con metadata si lo tienes)
+      dispatch(setUser({ name: (user.user_metadata?.name as string) || user.email || 'User', email: user.email || '' }));
+
+      Alert.alert(getTranslation(language, 'login'), getTranslation(language, 'loginSuccess'));
+      if (typeof setIsLoggedIn === 'function') setIsLoggedIn(true);
+
       navigation.navigate('Home');
-    }, 1500);
+    } catch (error: any) {
+      console.error('Login error:', error);
+      Alert.alert('Error', error?.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ImageBackground source={backgroundImage} style={styles.background} resizeMode="cover">
       <View style={styles.overlay}>
-        <Text style={styles.title}>HotelFind</Text>
-        <Text style={styles.subtitle}>Bienvenido a tu mejor opción en hoteles!</Text>
+        <Text style={styles.title}>{getTranslation(language, 'hotelFindTitle') || 'HotelFind'}</Text>
+        <Text style={styles.subtitle}>{getTranslation(language, 'joinHotelFind')}</Text>
 
         <View style={styles.inputWrapper}>
           <CustomInput
-            placeholder="Correo"
+            placeholder={getTranslation(language, 'login')}
             value={email}
             onChangeText={validateEmail}
             keyboardType="email-address"
@@ -73,7 +90,7 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
         <View style={styles.passwordWrapper}>
           <View style={styles.passwordContainer}>
             <CustomInput
-              placeholder="Contraseña"
+              placeholder={getTranslation(language, 'password')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -97,15 +114,15 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
         </View>
 
         <CustomButton
-          title={loading ? 'Ingresando...' : 'Ingresar'}
+          title={loading ? getTranslation(language, 'loggingIn') : getTranslation(language, 'login')}
           onPress={handleLogin}
           disabled={loading || emailError !== ''}
         />
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Todavía no tienes una cuenta? </Text>
+          <Text style={styles.footerText}>{getTranslation(language, 'noAccount')}</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')} disabled={loading}>
-            <Text style={styles.link}>Registrarse</Text>
+            <Text style={styles.link}>{getTranslation(language, 'signUp')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -181,4 +198,3 @@ const styles = StyleSheet.create({
 });
 
 export default LoginScreen;
-
