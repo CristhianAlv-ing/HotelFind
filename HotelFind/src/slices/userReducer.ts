@@ -29,6 +29,7 @@ export interface FavoriteOffer {
 interface UserState {
   name: string;
   email: string;
+  profileImage?: string; // nueva: URI de imagen de perfil
   favoriteHotels: FavoriteHotel[];
   favoriteOffers: FavoriteOffer[];
 }
@@ -36,6 +37,7 @@ interface UserState {
 const initialState: UserState = {
   name: '',
   email: '',
+  profileImage: undefined,
   favoriteHotels: [],
   favoriteOffers: [],
 };
@@ -47,6 +49,9 @@ const userSlice = createSlice({
     setUser(state, action: PayloadAction<{ name: string; email: string }>) {
       state.name = action.payload.name;
       state.email = action.payload.email;
+    },
+    setProfileImage(state, action: PayloadAction<string | undefined>) {
+      state.profileImage = action.payload;
     },
     addFavoriteHotel(state, action: PayloadAction<FavoriteHotel>) {
       const h = action.payload;
@@ -88,6 +93,7 @@ const userSlice = createSlice({
 
 export const {
   setUser,
+  setProfileImage,
   addFavoriteHotel,
   removeFavoriteHotel,
   addFavoriteOffer,
