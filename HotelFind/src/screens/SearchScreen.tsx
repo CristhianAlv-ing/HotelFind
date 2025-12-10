@@ -48,7 +48,8 @@ const SearchScreen: React.FC = () => {
   const [predLoading, setPredLoading] = useState(false);
 
   const mapRef = useRef<MapView | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  // Debounce ref: usar number | null evita referencias a NodeJS.Timeout en runtime
+  const debounceRef = useRef<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -85,21 +86,23 @@ const SearchScreen: React.FC = () => {
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
+      debounceRef.current = null;
     }
     if (!query || query.trim().length < 2) {
       setPredictions([]);
+      setPredLoading(false);
       return;
     }
 
     setPredLoading(true);
-    debounceRef.current = setTimeout(async () => {
+    // Guardar el id numérico del timeout
+    debounceRef.current = (setTimeout(async () => {
       try {
         const preds = await autocompletePlaces(query, { lat: region.latitude, lng: region.longitude }, 50000);
-        // opcional: filtrar predicciones por presencia de palabras indicativas de hotel (hotel, lodge, inn, alojamiento)
+        // Filtrar predicciones que parezcan hoteles
         const filtered = preds.filter(p =>
           /hotel|inn|lodg|hostel|resort|alojam|hospedaje/i.test(p.description)
         );
-        // Si no hay filtradas, mostrar todas
         setPredictions(filtered.length > 0 ? filtered : preds);
       } catch (err) {
         console.error('Error en autocomplete:', err);
@@ -107,10 +110,13 @@ const SearchScreen: React.FC = () => {
       } finally {
         setPredLoading(false);
       }
-    }, 350);
+    }, 350) as unknown) as number;
 
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
     };
   }, [query, region.latitude, region.longitude]);
 
@@ -144,7 +150,6 @@ const SearchScreen: React.FC = () => {
   };
 
   async function handlePredictionSelect(pred: PlacePrediction) {
-    // cuando el usuario selecciona una predicción, obtenemos detalles del place y centramos el mapa
     setQuery(pred.description);
     setPredictions([]);
     Keyboard.dismiss();
@@ -167,11 +172,10 @@ const SearchScreen: React.FC = () => {
       setRegion(newRegion);
       setTimeout(() => mapRef.current?.animateToRegion(newRegion, 500), 80);
 
-      // buscamos hoteles cerca del place seleccionado (opcional)
+      // Buscar hoteles cercanos al lugar seleccionado (opcional)
       const nearbyResults = await searchHotels('hotels near ' + (details.name || ''), { lat: newRegion.latitude, lng: newRegion.longitude });
       setHotels(nearbyResults);
 
-      // mostramos modal con fotos breve, permitir ver detalles completos
       setSelectedDetails(details);
       setModalVisible(true);
     } catch (err) {

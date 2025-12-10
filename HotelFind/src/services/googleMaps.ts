@@ -1,5 +1,3 @@
-
-typescript
 export interface HotelPlace {
   id: string;
   name: string;
@@ -34,8 +32,8 @@ export interface PlaceDetails {
 
 /**
  * IMPORTANTE:
- * - Reemplaza '<TU_GOOGLE_MAPS_API_KEY>' por tu clave real.
- * - Para producción usa variables de entorno o `app.json` y no incluyas la clave en el repo.
+ * Reemplaza '<TU_GOOGLE_MAPS_API_KEY>' por tu clave real.
+ * En producción usa variables de entorno / secrets.
  */
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCe3PTO532RHp0HLqSYD9W91dTUTRNmf3E';
 
@@ -78,6 +76,9 @@ export async function searchHotels(query: string, location?: { lat: number; lng:
   }
 }
 
+/**
+ * Autocomplete (Places Autocomplete API)
+ */
 export async function autocompletePlaces(input: string, location?: { lat: number; lng: number }, radius = 50000): Promise<PlacePrediction[]> {
   if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('<TU_GOOGLE_MAPS')) {
     console.warn('Google Maps API key no configurada en GOOGLE_MAPS_API_KEY.');
@@ -92,6 +93,7 @@ export async function autocompletePlaces(input: string, location?: { lat: number
     if (location) {
       locationParam = `&location=${location.lat},${location.lng}&radius=${radius}`;
     }
+    // types=establishment ayuda a obtener lugares (luego filtramos por hoteles)
     const url = `${base}?input=${q}${locationParam}&types=establishment&key=${GOOGLE_MAPS_API_KEY}`;
     const res = await fetch(url);
     if (!res.ok) {
@@ -111,6 +113,9 @@ export async function autocompletePlaces(input: string, location?: { lat: number
   }
 }
 
+/**
+ * Place Details (solo campos ligeros; NO devolvemos 'raw' completo)
+ */
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | null> {
   if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('<TU_GOOGLE_MAPS')) {
     console.warn('Google Maps API key no configurada en GOOGLE_MAPS_API_KEY.');

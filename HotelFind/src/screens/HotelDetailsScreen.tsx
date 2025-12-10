@@ -1,14 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Linking, TouchableOpacity, ScrollView, FlatList, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, Linking, TouchableOpacity, ScrollView, FlatList, Dimensions, Alert } from 'react-native';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import { getTranslation } from '../utils/translations';
+import { useDispatch, useSelector } from 'react-redux';
+import { addFavoriteHotel, removeFavoriteHotel } from '../slices/userReducer';
+import { RootState } from '../redux/Store';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width } = Dimensions.get('window');
 
-const HotelDetailsScreen: React.FC<any> = ({ route }) => {
+const HotelDetailsScreen: React.FC<any> = ({ route, navigation }) => {
   const { language } = useApp();
   const hotel = route?.params?.hotel;
+  const dispatch = useDispatch();
+  const favorites = useSelector((state: RootState) => state.user.favoriteHotels || []);
 
   if (!hotel) {
     return (
@@ -17,6 +23,32 @@ const HotelDetailsScreen: React.FC<any> = ({ route }) => {
       </View>
     );
   }
+
+  const isFavorite = favorites.some(f => (f.place_id && hotel.place_id && f.place_id === hotel.place_id) || (f.name === hotel.name && f.lat === hotel.lat && f.lng === hotel.lng));
+
+  const toggleFavorite = () => {
+    if (isFavorite) {
+      dispatch(removeFavoriteHotel({ place_id: hotel.place_id, id: hotel.id, name: hotel.name }));
+      Alert.alert(getTranslation(language, 'removed') || 'Eliminado', getTranslation(language, 'removedFromFavorites') || 'El hotel fue quitado de favoritos');
+    } else {
+      const fav = {
+        id: hotel.id,
+        place_id: hotel.place_id,
+        name: hotel.name,
+        description: hotel.description || hotel.address,
+        image: hotel.image,
+        photos: hotel.photos,
+        price: hotel.price,
+        rating: hotel.rating,
+        phone: hotel.phone,
+        website: hotel.website,
+        lat: hotel.lat,
+        lng: hotel.lng,
+      };
+      dispatch(addFavoriteHotel(fav));
+      Alert.alert(getTranslation(language, 'added') || 'Añadido', getTranslation(language, 'addedToFavorites') || 'El hotel fue agregado a favoritos');
+    }
+  };
 
   const openWebsite = () => {
     if (hotel.website) {
@@ -47,7 +79,13 @@ const HotelDetailsScreen: React.FC<any> = ({ route }) => {
         />
       ) : null}
 
-      <Text style={styles.title}>{hotel.name}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>{hotel.name}</Text>
+        <TouchableOpacity onPress={toggleFavorite} style={styles.favoriteButton}>
+          <Icon name={isFavorite ? 'heart' : 'heart-outline'} size={22} color={isFavorite ? colors.vibrantOrange : colors.deepBlue} />
+        </TouchableOpacity>
+      </View>
+
       {hotel.rating ? <Text style={styles.rating}>⭐ {hotel.rating}</Text> : null}
       <Text style={styles.description}>{hotel.description || hotel.address}</Text>
       {hotel.price ? <Text style={styles.price}>${hotel.price} {getTranslation(language, 'perNight')}</Text> : null}
@@ -93,11 +131,20 @@ const styles = StyleSheet.create({
     marginRight: 12,
     backgroundColor: '#eee',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: colors.deepBlue,
     marginVertical: 10,
+    flex: 1,
+  },
+  favoriteButton: {
+    marginLeft: 12,
   },
   rating: {
     fontSize: 16,

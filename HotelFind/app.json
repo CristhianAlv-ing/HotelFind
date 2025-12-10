@@ -18,7 +18,7 @@
         "NSLocationWhenInUseUsageDescription": "Usamos tu ubicación para mostrar hoteles cercanos en el mapa."
       },
       "config": {
-        "googleMapsApiKey": "<AIzaSyCe3PTO532RHp0HLqSYD9W91dTUTRNmf3E>"
+        "googleMapsApiKey": "AIzaSyCe3PTO532RHp0HLqSYD9W91dTUTRNmf3E"
       }
     },
     "android": {
@@ -34,7 +34,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "<TU_GOOGLE_MAPS_API_KEY>"
+          "apiKey": "AIzaSyCe3PTO532RHp0HLqSYD9W91dTUTRNmf3E"
         }
       }
     },
