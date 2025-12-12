@@ -40,6 +40,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "SUPABASE_URL": "https://oarfqnsfaawwpszbopme.supabase.co",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hcmZxbnNmYWF3d3BzemJvcG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxOTUxNTMsImV4cCI6MjA3OTc3MTE1M30.e-Hp5yx8hKQDy53rLso_SU04NslQYDErIAulKtLAOEQ"
     }
   }
 }

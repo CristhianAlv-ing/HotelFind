@@ -1,9 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
 
-const SUPABASE_URL = 'https://oarfqnsfaawwpszbopme.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hcmZxbnNmYWF3d3BzemJvcG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxOTUxNTMsImV4cCI6MjA3OTc3MTE1M30.e-Hp5yx8hKQDy53rLso_SU04NslQYDErIAulKtLAOEQ';
+const extras: Record<string, any> =
+  (Constants as any)?.expoConfig?.extra ||
+  (Constants as any)?.manifest?.extra ||
+  (process.env as unknown as Record<string, any>);
 
+const SUPABASE_URL = extras?.SUPABASE_URL ?? '';
+const SUPABASE_ANON_KEY = extras?.SUPABASE_ANON_KEY ?? '';
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn(
+    '[supabase] No se encontraron credenciales en expo.extra; revisa app.json o tus variables de entorno.'
+  );
+}
+
+// Crea cliente Supabase usando AsyncStorage (Expo)
 export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: AsyncStorage as any,
@@ -33,6 +46,7 @@ export async function signUp(
 
   return { user: data.user, session: data.session ?? null };
 }
+
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -64,16 +78,3 @@ export async function getCurrentUser() {
   if (error) throw error;
   return data.user;
 }
-
-export const signInUser = async (email: string, password: string) => {
-    const { user, error } = await supabase.auth.signIn({
-        email,
-        password,
-    });
-
-    if (error) {
-        throw new Error(error.message);
-    }
-
-    return user;
-};
