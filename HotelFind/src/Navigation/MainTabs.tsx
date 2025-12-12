@@ -11,6 +11,7 @@ import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ReservationsScreen from '../screens/ReservationsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -20,9 +21,7 @@ interface MainTabsProps {
 }
 
 const ProfileStack = ({ setIsLoggedIn }: { setIsLoggedIn: (value: boolean) => void }) => {
-  const { language, theme } = useApp();
-  const currentTheme = theme === 'light' ? lightTheme : darkTheme;
-
+  const { language } = useApp();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -57,6 +56,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ setIsLoggedIn }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
           if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
           else if (route.name === 'Search') iconName = focused ? 'search' : 'search-outline';
+          else if (route.name === 'Reservations') iconName = focused ? 'calendar' : 'calendar-outline';
           else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -82,6 +82,11 @@ const MainTabs: React.FC<MainTabsProps> = ({ setIsLoggedIn }) => {
         name="Search"
         component={SearchScreen}
         options={{ title: getTranslation(language, 'search') }}
+      />
+      <Tab.Screen
+        name="Reservations"
+        component={ReservationsScreen}
+        options={{ title: getTranslation(language, 'reservations') || 'Reservaciones' }}
       />
       <Tab.Screen
         name="Profile"
