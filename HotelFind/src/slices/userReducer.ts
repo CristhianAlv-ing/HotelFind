@@ -31,9 +31,17 @@ export interface Reservation {
   id: string;
   hotelName: string;
   place_id?: string;
-  date: string; // ISO string
+  date: string; // ISO string (legacy: corresponds to checkIn)
+  checkIn?: string; // ISO YYYY-MM-DD
+  checkOut?: string; // ISO YYYY-MM-DD
   guests: number;
   notes?: string;
+  // New optional fields for pricing and stay details
+  nights?: number;
+  roomType?: string;
+  roomCapacity?: number;
+  pricePerNight?: number;
+  totalPrice?: number;
   createdAt: string; // ISO
 }
 

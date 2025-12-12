@@ -73,3 +73,31 @@ export async function fetchPublicOffers(): Promise<Offer[]> {
     return sampleOffers;
   }
 }
+
+/**
+ * Try to find an external offer matching a given hotel name.
+ * It fetches public offers (or falls back to samples) and matches loosely by title.
+ */
+export async function findOfferForHotelByName(hotelName: string): Promise<Offer | undefined> {
+  try {
+    const offers = await fetchPublicOffers();
+    const normalize = (s: string) => s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .trim();
+
+    const target = normalize(hotelName);
+    // Prefer strong contains match
+    const exact = offers.find(o => normalize(o.title).includes(target));
+    if (exact) return exact;
+    // Fallback: some token overlap
+    const tokens = target.split(/\s+/).filter(Boolean);
+    return offers.find(o => {
+      const t = normalize(o.title);
+      return tokens.some(tok => t.includes(tok));
+    });
+  } catch {
+    return undefined;
+  }
+}

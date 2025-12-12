@@ -13,8 +13,7 @@ import {
   Modal,
   Animated,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../redux/Store';
 import { useApp } from '../context/AppContext';
@@ -238,12 +237,12 @@ const HomeScreen = () => {
 
       <View style={styles.controlsRow}>
         <TouchableOpacity style={styles.buttonPrimary} onPress={handleReserveNow}>
-          <Icon name="hotel" size={20} color="#FFFFFF" style={styles.icon} />
+          <MaterialIcons name="hotel" size={20} color="#FFFFFF" style={styles.icon} />
           <Text style={styles.buttonText}>{getTranslation(language, 'reserveNow')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.buttonSecondary} onPress={handleViewOffers}>
-          <Icon name="local-offer" size={20} color="#FFFFFF" style={styles.icon} />
+          <MaterialIcons name="local-offer" size={20} color="#FFFFFF" style={styles.icon} />
           <Text style={styles.buttonText}>{getTranslation(language, 'viewOffers')}</Text>
         </TouchableOpacity>
       </View>
@@ -519,6 +518,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     color: colors.darkGray,
+  },
+  emptyBox: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

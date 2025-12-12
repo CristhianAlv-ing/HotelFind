@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   Alert,
   Platform,
   Modal,
+  Image,
+  ScrollView,
+  Animated,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../redux/Store';
@@ -16,27 +19,61 @@ import { colors } from '../theme/colors';
 import { getTranslation } from '../utils/translations';
 import { addReservation, removeReservation } from '../slices/userReducer';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Calendar, DateObject } from 'react-native-calendars';
+import { Calendar } from 'react-native-calendars';
 import { useApp } from '../context/AppContext';
+import { findOfferForHotelByName } from '../services/offers';
 
 const ReservationsScreen: React.FC = () => {
-  const { language } = useApp();
-  const route = useRoute<any>();
-  const navigation = useNavigation<any>();
-  const dispatch = useDispatch();
-  const user = useSelector((s: RootState) => s.user);
+  const onDayPress = (day: any) => {
+    const ymd = day?.dateString as string;
+    if (!ymd) return;
+    if (!checkIn || (checkIn && checkOut)) {
+      setCheckIn(ymd);
+      setCheckOut(null);
+      return;
+    }
+    if (checkIn && !checkOut) {
+      if (ymd >= checkIn) {
+        setCheckOut(ymd);
+        setCalendarVisible(false);
+      } else {
+        setCheckIn(ymd);
+      }
+      return;
+    }
+  };
 
-  const prefillHotel = route?.params?.hotel as any | undefined;
+  useEffect(() => {
+    if (checkIn && checkOut) {
+      const start = new Date(checkIn + 'T12:00:00');
+      const end = new Date(checkOut + 'T12:00:00');
+      const diffMs = end.getTime() - start.getTime();
+      const diffDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+      setNights(diffDays);
+    }
+  }, [checkIn, checkOut]);
 
-  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
-
-  // Manage date selection using calendar
-  const [selectedDate, setSelectedDate] = useState<string | null>(prefillHotel?.date ? prefillHotel.date.split('T')[0] : null); // YYYY-MM-DD
-  const [dateInputText, setDateInputText] = useState<string>(selectedDate ?? '');
-  const [guestsText, setGuestsText] = useState<string>('1');
-  const [notes, setNotes] = useState<string>('');
-  const [calendarVisible, setCalendarVisible] = useState<boolean>(false);
-
+  const markedDates: { [key: string]: any } = (() => {
+    const map: { [key: string]: any } = {};
+    if (checkIn && checkOut) {
+      const start = new Date(checkIn + 'T00:00:00');
+      const end = new Date(checkOut + 'T00:00:00');
+      const dayMs = 24 * 60 * 60 * 1000;
+      for (let t = start.getTime(); t <= end.getTime(); t += dayMs) {
+        const d = new Date(t);
+        const y = d.toISOString().split('T')[0];
+        if (y === checkIn) map[y] = { startingDay: true, color: colors.vibrantOrange, textColor: '#fff' };
+        else if (y === checkOut) map[y] = { endingDay: true, color: colors.vibrantOrange, textColor: '#fff' };
+        else map[y] = { color: '#FFD9C7', textColor: colors.deepBlue };
+      }
+    } else if (checkIn) {
+      map[checkIn] = { startingDay: true, color: colors.vibrantOrange, textColor: '#fff' };
+    }
+    return map;
+  })();
+    setSelectedRoom(null);
+    setTab('upcoming');
+  };
   const reservations = user.reservations || [];
 
   const now = useMemo(() => new Date(), []);
@@ -58,12 +95,37 @@ const ReservationsScreen: React.FC = () => {
     }
   };
 
-  const onDayPress = (day: DateObject) => {
-    // day.dateString is YYYY-MM-DD
-    setSelectedDate(day.dateString);
-    setDateInputText(day.dateString);
-    setCalendarVisible(false);
+  const onDayPress = (day: any) => {
+    const ymd = day?.dateString as string;
+    if (!ymd) return;
+    // If no check-in or both set, start new range
+    if (!checkIn || (checkIn && checkOut)) {
+      setCheckIn(ymd);
+      setCheckOut(null);
+      return;
+    }
+    // If only check-in set, assign check-out ensuring it's after or equal
+    if (checkIn && !checkOut) {
+      if (ymd >= checkIn) {
+        setCheckOut(ymd);
+        setCalendarVisible(false);
+      } else {
+        // Selected before check-in: make it the new check-in
+        setCheckIn(ymd);
+      }
+      return;
+    }
   };
+
+  useEffect(() => {
+    if (checkIn && checkOut) {
+      const start = new Date(checkIn + 'T12:00:00');
+      const end = new Date(checkOut + 'T12:00:00');
+      const diffMs = end.getTime() - start.getTime();
+      const diffDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+      setNights(diffDays);
+    }
+  }, [checkIn, checkOut]);
 
   const handleAdd = () => {
     if (!selectedDate && dateInputText.trim().length === 0) {
@@ -84,6 +146,16 @@ const ReservationsScreen: React.FC = () => {
 
     const guests = parseInt(guestsText || '1', 10);
 
+    if (nights <= 0) {
+      Alert.alert(getTranslation(language, 'error') || 'Error', 'El número de noches debe ser al menos 1');
+      return;
+    }
+
+    if (selectedRoom && guests > selectedRoom.capacity) {
+      Alert.alert(getTranslation(language, 'error') || 'Error', `La habitación seleccionada admite hasta ${selectedRoom.capacity} persona(s)`);
+      return;
+    }
+
     // Construct an ISO date using the selected YYYY-MM-DD, set time to 12:00
     const chosenYmd = selectedDate ?? dateInputText;
     const isoDate = new Date(chosenYmd + 'T12:00:00').toISOString();
@@ -93,6 +165,9 @@ const ReservationsScreen: React.FC = () => {
       return;
     }
 
+    const perNight = selectedRoom?.price ?? pricePerNight ?? Math.max(40, Math.round((prefillHotel?.rating || 3) * 25));
+    const total = perNight * nights;
+
     const newRes = {
       id: Date.now().toString(),
       hotelName: hotelName.trim(),
@@ -100,6 +175,11 @@ const ReservationsScreen: React.FC = () => {
       date: isoDate,
       guests: guests > 0 ? guests : 1,
       notes: notes || undefined,
+      nights,
+      roomType: selectedRoom?.name,
+      roomCapacity: selectedRoom?.capacity,
+      pricePerNight: perNight,
+      totalPrice: total,
       createdAt: new Date().toISOString(),
     };
     dispatch(addReservation(newRes));
@@ -110,6 +190,8 @@ const ReservationsScreen: React.FC = () => {
     setDateInputText('');
     setGuestsText('1');
     setNotes('');
+    setNights(1);
+    setSelectedRoom(null);
     setTab('upcoming');
   };
 
@@ -124,7 +206,11 @@ const ReservationsScreen: React.FC = () => {
     <View style={styles.item}>
       <View style={{ flex: 1 }}>
         <Text style={styles.itemTitle}>{item.hotelName}</Text>
-        <Text style={styles.itemMeta}>{new Date(item.date).toLocaleString()}</Text>
+        <Text style={styles.itemMeta}>
+          {(item.checkIn ? new Date(item.checkIn + 'T12:00:00') : new Date(item.date)).toLocaleDateString()} →
+          {item.checkOut ? ` ${new Date(item.checkOut + 'T12:00:00').toLocaleDateString()}` : ''}
+          {item.nights ? ` · ${item.nights} noche(s)` : ''}
+        </Text>
         <Text style={styles.itemMeta}>Invitados: {item.guests}</Text>
         {item.notes ? <Text style={styles.itemNotes}>{item.notes}</Text> : null}
       </View>
@@ -137,10 +223,25 @@ const ReservationsScreen: React.FC = () => {
   );
 
   // markedDates for react-native-calendars
-  const markedDates: { [key: string]: any } = {};
-  if (selectedDate) {
-    markedDates[selectedDate] = { selected: true, selectedColor: colors.vibrantOrange };
-  }
+  const markedDates: { [key: string]: any } = (() => {
+    const map: { [key: string]: any } = {};
+    if (checkIn && checkOut) {
+      // build range inclusive
+      const start = new Date(checkIn + 'T00:00:00');
+      const end = new Date(checkOut + 'T00:00:00');
+      const dayMs = 24 * 60 * 60 * 1000;
+      for (let t = start.getTime(), i = 0; t <= end.getTime(); t += dayMs, i++) {
+        const d = new Date(t);
+        const y = d.toISOString().split('T')[0];
+        if (y === checkIn) map[y] = { startingDay: true, color: colors.vibrantOrange, textColor: '#fff' };
+        else if (y === checkOut) map[y] = { endingDay: true, color: colors.vibrantOrange, textColor: '#fff' };
+        else map[y] = { color: '#FFD9C7', textColor: colors.deepBlue };
+      }
+    } else if (checkIn) {
+      map[checkIn] = { startingDay: true, color: colors.vibrantOrange, textColor: '#fff' };
+    }
+    return map;
+  })();
 
   return (
     <View style={styles.container}>
@@ -172,16 +273,28 @@ const ReservationsScreen: React.FC = () => {
 
         {/* Hotel name display if prefilled */}
         {prefillHotel?.name ? (
-          <Text style={styles.prefillHotel}>{prefillHotel.name}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={styles.prefillHotel}>{prefillHotel.name}</Text>
+            <TouchableOpacity onPress={() => toggleDetails(true)}>
+              <Text style={{ color: colors.vibrantOrange, fontWeight: '700' }}>Detalles del hotel</Text>
+            </TouchableOpacity>
+          </View>
         ) : null}
 
-        {/* Date input: open calendar modal */}
-        <Text style={styles.label}>{getTranslation(language, 'date') || 'Fecha'}</Text>
+        {/* Date range: open calendar modal */}
+        <Text style={styles.label}>{getTranslation(language, 'selectDates') || 'Selecciona fechas'}</Text>
         <TouchableOpacity style={styles.datePicker} onPress={() => setCalendarVisible(true)}>
           <Text style={styles.datePickerText}>
-            {selectedDate ? formatDisplayDate(selectedDate) : (getTranslation(language, 'selectDate') || 'Selecciona una fecha')}
+            {checkIn ? `${getTranslation(language, 'checkIn') || 'Entrada'}: ${formatDisplayDate(checkIn)}` : (getTranslation(language, 'checkIn') || 'Entrada')}
+            {checkOut ? `  ·  ${getTranslation(language, 'checkOut') || 'Salida'}: ${formatDisplayDate(checkOut)}` : ''}
           </Text>
         </TouchableOpacity>
+
+        {/* Nights (auto-computed) */}
+        <Text style={[styles.label, { marginTop: 10 }]}>Noches</Text>
+        <View style={styles.nightsRowReadonly}>
+          <Text style={styles.nightsValue}>{nights}</Text>
+        </View>
 
         <Text style={[styles.label, { marginTop: 10 }]}>{getTranslation(language, 'guests') || 'Invitados'}</Text>
         <TextInput
@@ -191,6 +304,27 @@ const ReservationsScreen: React.FC = () => {
           keyboardType="number-pad"
           style={styles.input}
         />
+
+        {/* Rooms selection if hotel provided */}
+        {prefillHotel?.name ? (
+          <View style={{ marginTop: 10 }}>
+            <Text style={styles.label}>Habitación</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 4 }}>
+              {rooms.map(r => (
+                <TouchableOpacity key={r.id} style={[styles.roomChip, selectedRoom?.id === r.id ? styles.roomChipActive : null]} onPress={() => setSelectedRoom(r)}>
+                  <Text style={[styles.roomChipText, selectedRoom?.id === r.id ? styles.roomChipTextActive : null]}>{r.name} · {r.capacity} pers · ${r.price}/noche</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        {/* Price summary */}
+        <View style={styles.priceBox}>
+          <Text style={styles.priceLine}>Precio por noche: ${selectedRoom?.price ?? pricePerNight ?? 0}</Text>
+          <Text style={styles.priceLine}>Noches: {nights}</Text>
+          <Text style={[styles.priceLine, { fontWeight: '700', color: colors.deepBlue }]}>Total: ${((selectedRoom?.price ?? pricePerNight ?? 0) * Math.max(1, nights)).toFixed(2)}</Text>
+        </View>
 
         <Text style={[styles.label, { marginTop: 10 }]}>{getTranslation(language, 'notes') || 'Notas (opcional)'}</Text>
         <TextInput value={notes} onChangeText={setNotes} placeholder={getTranslation(language, 'notesPlaceholder') || 'Notas'} style={styles.input} />
@@ -206,13 +340,14 @@ const ReservationsScreen: React.FC = () => {
             <TouchableOpacity onPress={() => setCalendarVisible(false)}>
               <Text style={styles.calendarClose}>{getTranslation(language, 'close') || 'Cerrar'}</Text>
             </TouchableOpacity>
-            <Text style={styles.calendarTitle}>{getTranslation(language, 'selectDate') || 'Selecciona una fecha'}</Text>
+            <Text style={styles.calendarTitle}>{getTranslation(language, 'selectDates') || 'Selecciona fechas'}</Text>
             <View style={{ width: 60 }} />
           </View>
 
           <Calendar
             onDayPress={onDayPress}
             markedDates={markedDates}
+            markingType="period"
             minDate={new Date().toISOString().split('T')[0]}
             theme={{
               selectedDayBackgroundColor: colors.vibrantOrange,
@@ -224,6 +359,56 @@ const ReservationsScreen: React.FC = () => {
           />
         </View>
       </Modal>
+
+      {/* Sliding hotel details panel */}
+      {prefillHotel ? (
+        <Animated.View pointerEvents={detailsOpen ? 'auto' : 'none'}
+          style={[styles.detailsPanel, {
+            transform: [{ translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [400, 0] }) }],
+            opacity: panelAnim,
+          }]}
+        >
+          <View style={styles.detailsHeader}>
+            <Text style={styles.detailsTitle}>Detalles del hotel</Text>
+            <TouchableOpacity onPress={() => toggleDetails(false)}>
+              <Text style={{ color: colors.vibrantOrange, fontWeight: '700' }}>{getTranslation(language, 'close') || 'Cerrar'}</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
+            {prefillHotel.photoUrl ? (
+              <Image source={{ uri: prefillHotel.photoUrl }} style={styles.detailsImage} />
+            ) : null}
+            <Text style={styles.hotelName}>{prefillHotel.name}</Text>
+            {prefillHotel.rating ? <Text style={styles.hotelMeta}>⭐ {prefillHotel.rating}</Text> : null}
+            {prefillHotel.address ? <Text style={styles.hotelMeta}>{prefillHotel.address}</Text> : null}
+            {prefillHotel.website ? <Text style={[styles.hotelMeta, { color: colors.vibrantOrange }]}>{prefillHotel.website}</Text> : null}
+
+            <Text style={[styles.detailsSubtitle, { marginTop: 14 }]}>Habitaciones disponibles</Text>
+            {rooms.map((r, idx) => (
+              <View key={r.id} style={styles.roomRow}>
+                {prefillHotel.photoUrls && prefillHotel.photoUrls[idx % (prefillHotel.photoUrls.length || 1)] ? (
+                  <Image source={{ uri: prefillHotel.photoUrls[idx % prefillHotel.photoUrls.length] }} style={styles.roomImage} />
+                ) : (
+                  <View style={[styles.roomImage, { backgroundColor: '#eee' }]} />
+                )}
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.roomTitle}>{r.name}</Text>
+                  <Text style={styles.roomMeta}>Capacidad: {r.capacity} · ${r.price}/noche</Text>
+                </View>
+                <TouchableOpacity style={[styles.selectBtn, selectedRoom?.id === r.id ? styles.selectBtnActive : null]} onPress={() => setSelectedRoom(r)}>
+                  <Text style={[styles.selectBtnText, selectedRoom?.id === r.id ? styles.selectBtnTextActive : null]}>{selectedRoom?.id === r.id ? 'Seleccionado' : 'Seleccionar'}</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            <Text style={[styles.detailsSubtitle, { marginTop: 16 }]}>{getTranslation(language, 'activitiesTitle') || 'Actividades y zonas recreativas'}</Text>
+            <Text style={styles.activityText}>• Piscina al aire libre y solárium</Text>
+            <Text style={styles.activityText}>• Gimnasio equipado y spa</Text>
+            <Text style={styles.activityText}>• Restaurante con cocina local e internacional</Text>
+            <Text style={styles.activityText}>• Tours y actividades cercanas (playa, montaña, ciudad)</Text>
+          </ScrollView>
+        </Animated.View>
+      ) : null}
     </View>
   );
 };
@@ -258,6 +443,40 @@ const styles = StyleSheet.create({
   calendarHeader: { paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor: '#eee' },
   calendarClose: { color: colors.vibrantOrange, fontWeight: '700' },
   calendarTitle: { fontWeight: '700', color: colors.deepBlue, fontSize: 16 },
+
+  // Nights
+  nightsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  stepperBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f0f0f0', alignItems: 'center', justifyContent: 'center' },
+  stepperText: { fontSize: 18, fontWeight: '700', color: colors.deepBlue },
+  nightsValue: { width: 48, textAlign: 'center', fontWeight: '700', color: colors.deepBlue, fontSize: 16 },
+  nightsRowReadonly: { paddingVertical: 8, alignItems: 'flex-start' },
+
+  // Rooms chips
+  roomChip: { paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#eee', borderRadius: 16, marginRight: 8, backgroundColor: '#fff' },
+  roomChipActive: { backgroundColor: colors.vibrantOrange, borderColor: colors.vibrantOrange },
+  roomChipText: { color: colors.deepBlue, fontWeight: '600' },
+  roomChipTextActive: { color: '#fff' },
+
+  priceBox: { marginTop: 10, backgroundColor: '#f7f7f8', borderRadius: 8, padding: 10 },
+  priceLine: { color: colors.deepBlue, marginTop: 2 },
+
+  // Details panel
+  detailsPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, elevation: 16, paddingTop: 12 },
+  detailsHeader: { paddingHorizontal: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  detailsTitle: { fontWeight: '700', fontSize: 16, color: colors.deepBlue },
+  detailsImage: { width: '100%', height: 180, borderRadius: 12, marginBottom: 12 },
+  hotelName: { fontSize: 18, fontWeight: '700', color: colors.deepBlue },
+  hotelMeta: { marginTop: 6, color: colors.darkGray },
+  detailsSubtitle: { fontWeight: '700', color: colors.deepBlue, marginTop: 8 },
+  roomRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  roomImage: { width: 72, height: 56, borderRadius: 8 },
+  roomTitle: { fontWeight: '700', color: colors.deepBlue },
+  roomMeta: { color: colors.darkGray, marginTop: 2 },
+  selectBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.deepBlue },
+  selectBtnActive: { backgroundColor: colors.deepBlue },
+  selectBtnText: { color: colors.deepBlue, fontWeight: '700' },
+  selectBtnTextActive: { color: '#fff' },
+  activityText: { marginTop: 6, color: colors.darkGray },
 });
 
 export default ReservationsScreen;
