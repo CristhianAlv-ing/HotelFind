@@ -11,17 +11,19 @@ import backgroundImage from '../../assets/Login.png';
 import { useApp } from '../context/AppContext';
 import { getTranslation } from '../utils/translations';
 import { signIn } from '../services/supabase';
+import { useNavigation } from '@react-navigation/native';
 
-const LoginScreen: React.FC<any> = ({ navigation, route }) => {
+const LoginScreen: React.FC<any> = ({ route }) => {
   const dispatch = useDispatch();
   const { language } = useApp();
+  const navigation = useNavigation<any>();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
-  const { setIsLoggedIn } = route.params;
+  const { setIsLoggedIn } = route.params || {};
 
   const validateEmail = (text: string) => {
     setEmail(text);
@@ -50,17 +52,21 @@ const LoginScreen: React.FC<any> = ({ navigation, route }) => {
       setLoading(true);
       const { user } = await signIn(email, password);
       if (!user) {
-        // si no hay usuario en la respuesta, mostrar mensaje genérico
         throw new Error('No user returned from signIn');
       }
 
-      // Guardar en Redux (puedes ajustar el name con metadata si lo tienes)
       dispatch(setUser({ name: (user.user_metadata?.name as string) || user.email || 'User', email: user.email || '' }));
 
       Alert.alert(getTranslation(language, 'login'), getTranslation(language, 'loginSuccess'));
       if (typeof setIsLoggedIn === 'function') setIsLoggedIn(true);
 
-      navigation.navigate('Home');
+      // Navegar al navigator padre (Root) para abrir la pila 'App'
+      const parent = navigation.getParent?.();
+      if (parent && typeof parent.navigate === 'function') {
+        parent.navigate('App');
+      } else {
+        navigation.navigate('App');
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       Alert.alert('Error', error?.message || 'Login failed');
@@ -137,7 +143,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.40)', // Mejora la legibilidad
+    backgroundColor: 'rgba(255, 255, 255, 0.40)',
     padding: 20,
     justifyContent: 'center',
   },
@@ -194,6 +200,7 @@ const styles = StyleSheet.create({
     color: colors.vibrantOrange,
     fontSize: 14,
     fontWeight: 'bold',
+    marginLeft: 6,
   },
 });
 

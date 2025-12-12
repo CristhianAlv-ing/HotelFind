@@ -20,10 +20,12 @@ import { setUser } from '../slices/userReducer';
 import { useApp } from '../context/AppContext';
 import { getTranslation } from '../utils/translations';
 import { signUp } from '../services/supabase';
+import { useNavigation } from '@react-navigation/native';
 
-const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
+const RegisterScreen: React.FC<any> = ({ route }) => {
   const dispatch = useDispatch();
   const { language } = useApp();
+  const navigation = useNavigation<any>();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -150,7 +152,6 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
 
     try {
       setLoading(true);
-      // registramos en Supabase; guardamos metadata con nombre/pais/teléfono
       const { user } = await signUp(email, password, {
         name: fullName,
         country: selectedCountry.name,
@@ -161,13 +162,19 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
         throw new Error('No user created');
       }
 
-      // Guardamos en redux
       dispatch(setUser({ name: (user.user_metadata?.name as string) || fullName, email: user.email || email }));
 
       Alert.alert(getTranslation(language, 'accountCreated'), `${getTranslation(language, 'country')}: ${selectedCountry.name}\n${getTranslation(language, 'phone')}: ${selectedCountry.dialCode} ${cleanedPhone}`);
 
       if (typeof setIsLoggedIn === 'function') setIsLoggedIn(true);
-      navigation.navigate('Home');
+
+      // Navegar al parent para abrir la pila App
+      const parent = navigation.getParent?.();
+      if (parent && typeof parent.navigate === 'function') {
+        parent.navigate('App');
+      } else {
+        navigation.navigate('App');
+      }
     } catch (error: any) {
       console.error('Register error:', error);
       Alert.alert('Error', error?.message || 'Could not create account');
@@ -292,8 +299,6 @@ const RegisterScreen: React.FC<any> = ({ navigation, route }) => {
   );
 };
 
-export default RegisterScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -380,3 +385,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+export default RegisterScreen;

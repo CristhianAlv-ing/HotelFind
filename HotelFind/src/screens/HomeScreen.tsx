@@ -1,3 +1,4 @@
+// src/screens/HomeScreen.tsx
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
@@ -5,11 +6,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Modal,
   FlatList,
   Image,
   ActivityIndicator,
   Dimensions,
+  Modal,
   Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -33,22 +34,21 @@ type HotelCardProps = {
   onPress: (h: PlaceDetails) => void;
   onToggleFavorite: (h: PlaceDetails) => void;
   isFav: boolean;
+  onReserve: (h: PlaceDetails) => void;
 };
 
-const HotelCard: React.FC<HotelCardProps> = ({ item, onPress, onToggleFavorite, isFav }) => {
+const HotelCard: React.FC<HotelCardProps> = ({ item, onPress, onToggleFavorite, isFav, onReserve }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const confirmOpacity = useRef(new Animated.Value(0)).current;
   const [confirmText, setConfirmText] = useState<string>('');
 
   const playConfirm = (text: string) => {
     setConfirmText(text);
-    // pop animation
     Animated.sequence([
       Animated.spring(scaleAnim, { toValue: 1.15, useNativeDriver: true, friction: 6 }),
       Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 6 }),
     ]).start();
 
-    // show confirm label fade in/out
     Animated.sequence([
       Animated.timing(confirmOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
       Animated.delay(900),
@@ -59,6 +59,10 @@ const HotelCard: React.FC<HotelCardProps> = ({ item, onPress, onToggleFavorite, 
   const onBookmarkPress = () => {
     onToggleFavorite(item);
     playConfirm(isFav ? (getTranslation('es' as any, 'removed') || 'Quitado') : (getTranslation('es' as any, 'saved') || 'Guardado'));
+  };
+
+  const onReservePress = () => {
+    onReserve(item);
   };
 
   return (
@@ -95,6 +99,12 @@ const HotelCard: React.FC<HotelCardProps> = ({ item, onPress, onToggleFavorite, 
 
         {item.address ? <Text style={styles.cardAddress} numberOfLines={1}>{item.address}</Text> : null}
         <Text style={styles.cardDesc} numberOfLines={2}>{item.website ?? 'Descripción no disponible'}</Text>
+
+        <View style={styles.cardActionsRow}>
+          <TouchableOpacity style={styles.reserveBtnSmall} onPress={onReservePress}>
+            <Text style={styles.reserveBtnSmallText}>{getTranslation('es' as any, 'reserveNow') || 'Reservar ahora'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -120,23 +130,19 @@ const HomeScreen = () => {
   const loadHotels = async () => {
     setHotelsLoading(true);
     try {
-      const places: HotelPlace[] = await searchHotels('hotels');
+      const places = await searchHotels('hotels');
       const limited = places.slice(0, 10);
       const detailsPromises = limited.map(p => getPlaceDetails(p.place_id || p.id));
       const details = await Promise.all(detailsPromises);
-      const merged: PlaceDetails[] = limited.map((p, idx) => {
-        const d = details[idx];
-        if (d) return d;
-        return {
-          place_id: p.place_id ?? p.id,
-          name: p.name,
-          address: p.address,
-          lat: p.lat,
-          lng: p.lng,
-          rating: p.rating,
-          photoUrl: undefined,
-          photoUrls: [],
-        };
+      const merged = limited.map((p, idx) => details[idx] ?? {
+        place_id: p.place_id ?? p.id,
+        name: p.name,
+        address: p.address,
+        lat: p.lat,
+        lng: p.lng,
+        rating: p.rating,
+        photoUrl: undefined,
+        photoUrls: [],
       });
       setHotels(merged);
     } catch (err) {
@@ -149,7 +155,7 @@ const HomeScreen = () => {
   };
 
   const handleReserveNow = () => {
-    navigation.navigate('Search');
+    navigation.navigate('Reservations');
   };
 
   const handleViewOffers = async () => {
@@ -199,12 +205,17 @@ const HomeScreen = () => {
     navigation.navigate('HotelDetails', { hotel: h });
   };
 
+  const onReserveFromCard = (hotel: PlaceDetails) => {
+    navigation.navigate('Reservations', { hotel });
+  };
+
   const renderHotel = ({ item }: { item: PlaceDetails }) => (
     <HotelCard
       item={item}
       onPress={onCardPress}
       onToggleFavorite={toggleFavorite}
       isFav={isFavorite(item.place_id, item.name)}
+      onReserve={onReserveFromCard}
     />
   );
 
@@ -431,6 +442,9 @@ const styles = StyleSheet.create({
     color: colors.darkGray,
     fontSize: 13,
   },
+  cardActionsRow: { marginTop: 8, flexDirection: 'row', justifyContent: 'flex-end' },
+  reserveBtnSmall: { backgroundColor: colors.vibrantOrange, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
+  reserveBtnSmallText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 
   modalHeader: {
     paddingTop: 48,

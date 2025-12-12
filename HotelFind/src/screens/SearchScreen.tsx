@@ -19,7 +19,7 @@ import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import { getTranslation } from '../utils/translations';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
-import { searchHotels, HotelPlace, getPlaceDetails, autocompletePlaces, PlacePrediction } from '../services/googleMaps';
+import { searchHotels, HotelPlace, getPlaceDetails, autocompletePlaces, PlacePrediction, PlaceDetails } from '../services/googleMaps';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 
@@ -32,6 +32,19 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.0421,
 };
 
+const mapPlaceDetailsToHotelPlace = (d: PlaceDetails | null): HotelPlace | null => {
+  if (!d) return null;
+  return {
+    id: d.place_id ?? `${d.lat}_${d.lng}`,
+    place_id: d.place_id,
+    name: d.name,
+    address: d.address,
+    lat: d.lat ?? 0,
+    lng: d.lng ?? 0,
+    rating: d.rating,
+  };
+};
+
 const SearchScreen: React.FC = () => {
   const { language } = useApp();
   const navigation = useNavigation<any>();
@@ -42,13 +55,12 @@ const SearchScreen: React.FC = () => {
   const [region, setRegion] = useState<Region>(DEFAULT_REGION);
   const [locating, setLocating] = useState(true);
   const [fetchingDetails, setFetchingDetails] = useState(false);
-  const [selectedDetails, setSelectedDetails] = useState<any | null>(null);
+  const [selectedDetails, setSelectedDetails] = useState<PlaceDetails | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [predLoading, setPredLoading] = useState(false);
 
   const mapRef = useRef<MapView | null>(null);
-  // Debounce ref: usar number | null evita referencias a NodeJS.Timeout en runtime
   const debounceRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -82,7 +94,7 @@ const SearchScreen: React.FC = () => {
     })();
   }, [language]);
 
-  // Debounced autocomplete when user types
+  // Autocomplete debounced
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -95,11 +107,9 @@ const SearchScreen: React.FC = () => {
     }
 
     setPredLoading(true);
-    // Guardar el id numérico del timeout
     debounceRef.current = (setTimeout(async () => {
       try {
         const preds = await autocompletePlaces(query, { lat: region.latitude, lng: region.longitude }, 50000);
-        // Filtrar predicciones que parezcan hoteles
         const filtered = preds.filter(p =>
           /hotel|inn|lodg|hostel|resort|alojam|hospedaje/i.test(p.description)
         );
@@ -120,6 +130,9 @@ const SearchScreen: React.FC = () => {
     };
   }, [query, region.latitude, region.longitude]);
 
+  // Search button behavior:
+  // - If the query exactly matches a returned place name -> show only that marker (specific selection).
+  // - Otherwise show the general results.
   const onSearch = async () => {
     Keyboard.dismiss();
     setPredictions([]);
@@ -127,10 +140,44 @@ const SearchScreen: React.FC = () => {
     try {
       const q = query.trim() || 'hotels';
       const results = await searchHotels(q, { lat: region.latitude, lng: region.longitude });
-      setHotels(results);
-      if (results.length > 0) {
+      if (!results || results.length === 0) {
+        setHotels([]);
+        Alert.alert(getTranslation(language, 'noResults') || 'No se encontraron resultados');
+        return;
+      }
+
+      // If there are exact name matches to the query (case-insensitive), show only those (likely the specific hotel)
+      const qLower = q.toLowerCase();
+      const exactMatches = results.filter(r => (r.name || '').toLowerCase() === qLower);
+
+      if (exactMatches.length > 0) {
+        setHotels(exactMatches);
+        const first = exactMatches[0];
+        const newRegion: Region = {
+          latitude: first.lat,
+          longitude: first.lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        setRegion(newRegion);
+        setTimeout(() => mapRef.current?.animateToRegion(newRegion, 500), 100);
+      } else if (results.length === 1) {
+        // If only one result, center it
+        setHotels(results);
         const first = results[0];
-        const newRegion = {
+        const newRegion: Region = {
+          latitude: first.lat,
+          longitude: first.lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        setRegion(newRegion);
+        setTimeout(() => mapRef.current?.animateToRegion(newRegion, 500), 100);
+      } else {
+        // General case: multiple results -> keep them all
+        setHotels(results);
+        const first = results[0];
+        const newRegion: Region = {
           latitude: first.lat,
           longitude: first.lng,
           latitudeDelta: 0.05,
@@ -138,8 +185,6 @@ const SearchScreen: React.FC = () => {
         };
         setRegion(newRegion);
         setTimeout(() => mapRef.current?.animateToRegion(newRegion, 500), 100);
-      } else {
-        Alert.alert(getTranslation(language, 'noResults') || 'No se encontraron resultados');
       }
     } catch (err) {
       console.error('Error buscando hoteles:', err);
@@ -149,6 +194,7 @@ const SearchScreen: React.FC = () => {
     }
   };
 
+  // When user selects an autocomplete prediction, fetch Place Details and show only that marker
   async function handlePredictionSelect(pred: PlacePrediction) {
     setQuery(pred.description);
     setPredictions([]);
@@ -172,10 +218,15 @@ const SearchScreen: React.FC = () => {
       setRegion(newRegion);
       setTimeout(() => mapRef.current?.animateToRegion(newRegion, 500), 80);
 
-      // Buscar hoteles cercanos al lugar seleccionado (opcional)
-      const nearbyResults = await searchHotels('hotels near ' + (details.name || ''), { lat: newRegion.latitude, lng: newRegion.longitude });
-      setHotels(nearbyResults);
+      // Show ONLY the selected place as a marker (no otros similares)
+      const singlePlace = mapPlaceDetailsToHotelPlace(details);
+      if (singlePlace) {
+        setHotels([singlePlace]);
+      } else {
+        setHotels([]);
+      }
 
+      // Store details for modal / "Ver detalles"
       setSelectedDetails(details);
       setModalVisible(true);
     } catch (err) {
@@ -198,11 +249,16 @@ const SearchScreen: React.FC = () => {
 
     if (!h.place_id) {
       setSelectedDetails({
+        place_id: h.id,
         name: h.name,
         address: h.address,
         rating: h.rating,
+        lat: h.lat,
+        lng: h.lng,
         photoUrls: [],
-      });
+        website: undefined,
+        phone: undefined,
+      } as PlaceDetails);
       setModalVisible(true);
       return;
     }
@@ -212,11 +268,16 @@ const SearchScreen: React.FC = () => {
       const details = await getPlaceDetails(h.place_id);
       if (!details) {
         setSelectedDetails({
+          place_id: h.place_id,
           name: h.name,
           address: h.address,
           rating: h.rating,
+          lat: h.lat,
+          lng: h.lng,
           photoUrls: [],
-        });
+          website: undefined,
+          phone: undefined,
+        } as PlaceDetails);
       } else {
         setSelectedDetails(details);
       }
@@ -229,6 +290,7 @@ const SearchScreen: React.FC = () => {
     }
   }
 
+  // Navega a la pantalla HotelDetails con todos los campos disponibles del Place
   function openHotelDetailsFromModal() {
     if (!selectedDetails) return;
     const hotelParam = {
@@ -243,6 +305,7 @@ const SearchScreen: React.FC = () => {
       place_id: selectedDetails.place_id,
       lat: selectedDetails.lat,
       lng: selectedDetails.lng,
+      // no incluimos grandes objetos raw
     };
     setModalVisible(false);
     navigation.navigate('HotelDetails', { hotel: hotelParam });

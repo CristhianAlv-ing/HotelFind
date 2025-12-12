@@ -1,3 +1,4 @@
+// src/slices/userReducer.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface FavoriteHotel {
@@ -26,12 +27,23 @@ export interface FavoriteOffer {
   description?: string;
 }
 
+export interface Reservation {
+  id: string;
+  hotelName: string;
+  place_id?: string;
+  date: string; // ISO string
+  guests: number;
+  notes?: string;
+  createdAt: string; // ISO
+}
+
 interface UserState {
   name: string;
   email: string;
-  profileImage?: string; // nueva: URI de imagen de perfil
+  profileImage?: string;
   favoriteHotels: FavoriteHotel[];
   favoriteOffers: FavoriteOffer[];
+  reservations: Reservation[];
 }
 
 const initialState: UserState = {
@@ -40,6 +52,7 @@ const initialState: UserState = {
   profileImage: undefined,
   favoriteHotels: [],
   favoriteOffers: [],
+  reservations: [],
 };
 
 const userSlice = createSlice({
@@ -55,7 +68,11 @@ const userSlice = createSlice({
     },
     addFavoriteHotel(state, action: PayloadAction<FavoriteHotel>) {
       const h = action.payload;
-      const exists = state.favoriteHotels.some(f => (f.place_id && h.place_id && f.place_id === h.place_id) || (f.name === h.name && f.lat === h.lat && f.lng === h.lng));
+      const exists = state.favoriteHotels.some(
+        f =>
+          (f.place_id && h.place_id && f.place_id === h.place_id) ||
+          (f.name === h.name && f.lat === h.lat && f.lng === h.lng)
+      );
       if (!exists) {
         state.favoriteHotels.push(h);
       }
@@ -87,7 +104,21 @@ const userSlice = createSlice({
     clearFavorites(state) {
       state.favoriteHotels = [];
       state.favoriteOffers = [];
-    }
+    },
+
+    // Reservaciones
+    addReservation(state, action: PayloadAction<Reservation>) {
+      const exists = state.reservations.some(r => r.id === action.payload.id);
+      if (!exists) {
+        state.reservations.push(action.payload);
+      }
+    },
+    removeReservation(state, action: PayloadAction<{ id: string }>) {
+      state.reservations = state.reservations.filter(r => r.id !== action.payload.id);
+    },
+    updateReservation(state, action: PayloadAction<Reservation>) {
+      state.reservations = state.reservations.map(r => (r.id === action.payload.id ? action.payload : r));
+    },
   },
 });
 
@@ -99,6 +130,9 @@ export const {
   addFavoriteOffer,
   removeFavoriteOffer,
   clearFavorites,
+  addReservation,
+  removeReservation,
+  updateReservation,
 } = userSlice.actions;
 
 export default userSlice.reducer;
