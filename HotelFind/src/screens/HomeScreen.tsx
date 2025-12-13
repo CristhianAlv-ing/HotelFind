@@ -20,9 +20,10 @@ import { RootState } from '../redux/Store';
 import { useApp } from '../context/AppContext';
 import { getTranslation } from '../utils/translations';
 import { colors } from '../theme/colors';
+import { lightTheme, darkTheme } from '../theme/themes';
 import { useNavigation } from '@react-navigation/native';
 import { fetchPublicOffers, Offer } from '../services/offers';
-import { searchHotels, getPlaceDetails, HotelPlace, PlaceDetails } from '../services/googleMaps';
+import { getPopularHotels, Hotel } from '../services/api';
 import { addFavoriteHotel, removeFavoriteHotel } from '../slices/userReducer';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
