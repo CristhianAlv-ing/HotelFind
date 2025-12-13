@@ -77,13 +77,7 @@ const LoginScreen: React.FC<any> = ({ route }) => {
       Alert.alert(getTranslation(language, 'login'), getTranslation(language, 'loginSuccess'));
       if (typeof setIsLoggedIn === 'function') setIsLoggedIn(true);
 
-      // Navegar al navigator padre (Root) para abrir la pila 'App'
-      const parent = navigation.getParent?.();
-      if (parent && typeof parent.navigate === 'function') {
-        parent.navigate('App');
-      } else {
-        navigation.navigate('App');
-      }
+      // La bandera isLoggedIn levantará MainTabs en el contenedor raíz; no es necesario navegar aquí.
     } catch (error: any) {
       console.error('Login error:', error);
       Alert.alert('Error', error?.message || 'Login failed');
@@ -124,12 +118,7 @@ const LoginScreen: React.FC<any> = ({ route }) => {
       Alert.alert(getTranslation(language, 'login'), getTranslation(language, 'loginSuccess'));
       if (typeof setIsLoggedIn === 'function') setIsLoggedIn(true);
 
-      const parent = navigation.getParent?.();
-      if (parent && typeof parent.navigate === 'function') {
-        parent.navigate('App');
-      } else {
-        navigation.navigate('App');
-      }
+      // La bandera isLoggedIn levantará MainTabs en el contenedor raíz; no es necesario navegar aquí.
     } catch (error: any) {
       console.error('Biometric login error:', error);
       Alert.alert(getTranslation(language, 'error') || 'Error', getTranslation(language, 'biometricFailed') || 'No se pudo autenticar con huella');

@@ -168,13 +168,7 @@ const RegisterScreen: React.FC<any> = ({ route }) => {
 
       if (typeof setIsLoggedIn === 'function') setIsLoggedIn(true);
 
-      // Navegar al parent para abrir la pila App
-      const parent = navigation.getParent?.();
-      if (parent && typeof parent.navigate === 'function') {
-        parent.navigate('App');
-      } else {
-        navigation.navigate('App');
-      }
+      // La bandera isLoggedIn levantará MainTabs en el contenedor raíz; no es necesario navegar aquí.
     } catch (error: any) {
       console.error('Register error:', error);
       Alert.alert('Error', error?.message || 'Could not create account');

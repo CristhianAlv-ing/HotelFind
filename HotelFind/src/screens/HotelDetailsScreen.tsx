@@ -207,8 +207,8 @@ const HotelDetailsScreen: React.FC<any> = ({ route, navigation }) => {
         </View>
       </Modal>
 
-      <TouchableOpacity style={styles.backReserveButton} onPress={() => navigation.navigate('Reservations', { hotel, checkIn, checkOut })}>
-        <Text style={styles.backReserveText}>{getTranslation(language, 'backToReservations') || 'Volver a reservaciones'}</Text>
+      <TouchableOpacity style={styles.backReserveButton} onPress={() => navigation.navigate('CreateReservation', { hotel, checkIn, checkOut })}>
+        <Text style={styles.backReserveText}>{getTranslation(language, 'reserveNow') || 'Reservar ahora'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

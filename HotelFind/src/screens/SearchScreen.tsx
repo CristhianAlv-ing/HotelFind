@@ -326,7 +326,7 @@ const SearchScreen: React.FC = () => {
       lng: selectedDetails.lng,
     };
     setModalVisible(false);
-    navigation.navigate('Reservations', { hotel: hotelParam });
+    navigation.navigate('CreateReservation', { hotel: hotelParam });
   }
 
   const renderHotelItem = ({ item }: { item: HotelPlace }) => (

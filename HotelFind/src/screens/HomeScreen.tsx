@@ -162,7 +162,7 @@ const HomeScreen = () => {
   };
 
   const handleReserveNow = () => {
-    navigation.navigate('Reservations');
+    navigation.navigate('CreateReservation');
   };
 
   const handleViewOffers = async () => {
@@ -213,7 +213,7 @@ const HomeScreen = () => {
   };
 
   const onReserveFromCard = (hotel: PlaceDetails) => {
-    navigation.navigate('Reservations', { hotel });
+    navigation.navigate('CreateReservation', { hotel });
   };
 
   const renderHotel = ({ item }: { item: PlaceDetails }) => (

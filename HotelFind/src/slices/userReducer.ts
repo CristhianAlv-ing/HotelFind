@@ -120,6 +120,9 @@ const userSlice = createSlice({
 
     // Reservaciones
     addReservation(state, action: PayloadAction<Reservation>) {
+      if (!Array.isArray(state.reservations)) {
+        state.reservations = [];
+      }
       const exists = state.reservations.some(r => r.id === action.payload.id);
       if (!exists) {
         state.reservations.push(action.payload);
