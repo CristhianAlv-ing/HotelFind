@@ -1,5 +1,5 @@
 // src/screens/LoginScreen.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
@@ -10,8 +10,9 @@ import { setUser } from '../slices/userReducer';
 import backgroundImage from '../../assets/Login.png';
 import { useApp } from '../context/AppContext';
 import { getTranslation } from '../utils/translations';
-import { signIn } from '../services/supabase';
+import { signIn, supabase } from '../services/supabase';
 import { useNavigation } from '@react-navigation/native';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 const LoginScreen: React.FC<any> = ({ route }) => {
   const dispatch = useDispatch();
@@ -22,8 +23,24 @@ const LoginScreen: React.FC<any> = ({ route }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
+  const [bioAvailable, setBioAvailable] = useState(false);
   const [emailError, setEmailError] = useState('');
   const { setIsLoggedIn } = route.params || {};
+
+  useEffect(() => {
+    const checkBio = async () => {
+      try {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const enrolled = await LocalAuthentication.isEnrolledAsync();
+        setBioAvailable(Boolean(hasHardware && enrolled));
+      } catch (err) {
+        console.warn('Biometric check failed', err);
+        setBioAvailable(false);
+      }
+    };
+    checkBio();
+  }, []);
 
   const validateEmail = (text: string) => {
     setEmail(text);
@@ -72,6 +89,52 @@ const LoginScreen: React.FC<any> = ({ route }) => {
       Alert.alert('Error', error?.message || 'Login failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    if (!bioAvailable) {
+      Alert.alert(getTranslation(language, 'error') || 'Error', getTranslation(language, 'biometricUnavailable') || 'La autenticación biométrica no está disponible');
+      return;
+    }
+
+    try {
+      setBioLoading(true);
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: getTranslation(language, 'biometricLogin') || 'Ingresar con huella',
+        fallbackLabel: getTranslation(language, 'login') || 'Login',
+      });
+
+      if (!result.success) {
+        Alert.alert(getTranslation(language, 'error') || 'Error', getTranslation(language, 'biometricFailed') || 'No se pudo autenticar con huella');
+        return;
+      }
+
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      const session = data?.session;
+      const user = session?.user;
+
+      if (!session || !user) {
+        Alert.alert(getTranslation(language, 'error') || 'Error', getTranslation(language, 'biometricNoSession') || 'Inicia con correo y contraseña primero');
+        return;
+      }
+
+      dispatch(setUser({ name: (user.user_metadata?.name as string) || user.email || 'User', email: user.email || '' }));
+      Alert.alert(getTranslation(language, 'login'), getTranslation(language, 'loginSuccess'));
+      if (typeof setIsLoggedIn === 'function') setIsLoggedIn(true);
+
+      const parent = navigation.getParent?.();
+      if (parent && typeof parent.navigate === 'function') {
+        parent.navigate('App');
+      } else {
+        navigation.navigate('App');
+      }
+    } catch (error: any) {
+      console.error('Biometric login error:', error);
+      Alert.alert(getTranslation(language, 'error') || 'Error', getTranslation(language, 'biometricFailed') || 'No se pudo autenticar con huella');
+    } finally {
+      setBioLoading(false);
     }
   };
 
@@ -124,6 +187,13 @@ const LoginScreen: React.FC<any> = ({ route }) => {
           onPress={handleLogin}
           disabled={loading || emailError !== ''}
         />
+
+        {bioAvailable ? (
+          <TouchableOpacity style={styles.bioButton} onPress={handleBiometricLogin} disabled={bioLoading || loading} activeOpacity={0.85}>
+            <Ionicons name="finger-print" size={20} color={colors.deepBlue} style={{ marginRight: 8 }} />
+            <Text style={styles.bioText}>{bioLoading ? (getTranslation(language, 'loggingIn') || 'Autenticando...') : (getTranslation(language, 'biometricLogin') || 'Ingresar con huella')}</Text>
+          </TouchableOpacity>
+        ) : null}
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>{getTranslation(language, 'noAccount')}</Text>
@@ -201,6 +271,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginLeft: 6,
+  },
+  bioButton: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: colors.deepBlue,
+    backgroundColor: 'rgba(58,82,137,0.08)',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  bioText: {
+    color: colors.deepBlue,
+    fontWeight: '700',
+    fontSize: 15,
   },
 });
 

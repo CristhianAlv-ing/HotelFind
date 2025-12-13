@@ -311,6 +311,24 @@ const SearchScreen: React.FC = () => {
     navigation.navigate('HotelDetails', { hotel: hotelParam });
   }
 
+  function openReservationFromModal() {
+    if (!selectedDetails) return;
+    const hotelParam = {
+      name: selectedDetails.name,
+      description: selectedDetails.address || '',
+      image: (selectedDetails.photoUrls && selectedDetails.photoUrls[0]) || selectedDetails.photoUrl,
+      photos: selectedDetails.photoUrls || (selectedDetails.photoUrl ? [selectedDetails.photoUrl] : []),
+      rating: selectedDetails.rating,
+      phone: selectedDetails.phone,
+      website: selectedDetails.website,
+      place_id: selectedDetails.place_id,
+      lat: selectedDetails.lat,
+      lng: selectedDetails.lng,
+    };
+    setModalVisible(false);
+    navigation.navigate('Reservations', { hotel: hotelParam });
+  }
+
   const renderHotelItem = ({ item }: { item: HotelPlace }) => (
     <TouchableOpacity
       style={styles.card}
@@ -440,6 +458,9 @@ const SearchScreen: React.FC = () => {
                     <TouchableOpacity style={styles.modalButtonDetails} onPress={openHotelDetailsFromModal}>
                       <Text style={[styles.modalButtonText, { color: '#fff' }]}>{getTranslation(language, 'viewDetails') || 'Ver detalles'}</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.modalButtonReserve} onPress={openReservationFromModal}>
+                      <Text style={[styles.modalButtonText, { color: '#fff' }]}>{getTranslation(language, 'reserveNow') || 'Reserva ya'}</Text>
+                    </TouchableOpacity>
                   </View>
                 </>
               )}
@@ -567,9 +588,11 @@ const styles = StyleSheet.create({
     maxHeight: height * 0.65,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.deepBlue,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   modalSubtitle: {
     color: colors.darkGray,
@@ -579,6 +602,7 @@ const styles = StyleSheet.create({
   photoList: {
     height: 180,
     marginBottom: 8,
+    flex: 1,
   },
   modalImage: {
     width: width * 0.8,
@@ -601,20 +625,31 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 16,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   modalButtonClose: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
+    flex: 1,
+    paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.darkGray,
+    alignItems: 'center',
   },
   modalButtonDetails: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: colors.deepBlue,
+    alignItems: 'center',
+  },
+  modalButtonReserve: {
+    flex: 1,
+    paddingVertical: 12,
     borderRadius: 8,
     backgroundColor: colors.vibrantOrange,
+    alignItems: 'center',
   },
   modalButtonText: {
     color: colors.deepBlue,

@@ -36,12 +36,16 @@ export interface Reservation {
   checkOut?: string; // ISO YYYY-MM-DD
   guests: number;
   notes?: string;
+  userName?: string;
+  phoneNumber?: string;
   // New optional fields for pricing and stay details
   nights?: number;
   roomType?: string;
   roomCapacity?: number;
   pricePerNight?: number;
   totalPrice?: number;
+  adjustmentType?: 'penalty' | 'extension';
+  adjustmentAmount?: number;
   createdAt: string; // ISO
 }
 

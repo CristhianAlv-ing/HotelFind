@@ -1,29 +1,111 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  TextInput,
-  Alert,
-  Platform,
-  Modal,
-  Image,
-  ScrollView,
-  Animated,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, Platform, Modal, Image, ScrollView, Animated } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../redux/Store';
 import { colors } from '../theme/colors';
 import { getTranslation } from '../utils/translations';
-import { addReservation, removeReservation } from '../slices/userReducer';
+import { addReservation, removeReservation, updateReservation } from '../slices/userReducer';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Calendar } from 'react-native-calendars';
 import { useApp } from '../context/AppContext';
 import { findOfferForHotelByName } from '../services/offers';
 
 const ReservationsScreen: React.FC = () => {
+  const { language } = useApp();
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+  const dispatch = useDispatch();
+  const user = useSelector((s: RootState) => s.user);
+
+  const prefillHotel = route?.params?.hotel as any | undefined;
+  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
+
+  const [checkIn, setCheckIn] = useState<string | null>(null);
+  const [checkOut, setCheckOut] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('');
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [guestsText, setGuestsText] = useState<string>('1');
+  const [notes, setNotes] = useState<string>('');
+  const [calendarVisible, setCalendarVisible] = useState<boolean>(false);
+  const [nights, setNights] = useState<number>(1);
+
+  const [detailsOpen, setDetailsOpen] = useState<boolean>(false);
+  const panelAnim = useRef(new Animated.Value(0)).current;
+  const [pricePerNight, setPricePerNight] = useState<number | undefined>(undefined);
+  const [selectedRoom, setSelectedRoom] = useState<{ id: string; name: string; capacity: number; price: number } | null>(null);
+  const formAnim = useRef(new Animated.Value(60)).current;
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingReservation, setEditingReservation] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (route?.params?.checkIn && !checkIn) {
+      setCheckIn(route.params.checkIn);
+    }
+    if (route?.params?.checkOut && !checkOut) {
+      setCheckOut(route.params.checkOut);
+    }
+  }, [route?.params?.checkIn, route?.params?.checkOut]);
+
+  const toggleDetails = (open?: boolean) => {
+    const next = open !== undefined ? open : !detailsOpen;
+    setDetailsOpen(next);
+    Animated.timing(panelAnim, { toValue: next ? 1 : 0, duration: 280, useNativeDriver: true }).start();
+  };
+
+  useEffect(() => {
+    if (prefillHotel?.name) {
+      findOfferForHotelByName(prefillHotel.name).then(offer => {
+        if (offer && offer.price && offer.price > 0) {
+          setPricePerNight(offer.price);
+        } else {
+          const base = Math.max(40, Math.round((prefillHotel?.rating || 3) * 25));
+          setPricePerNight(base);
+        }
+      }).catch(() => {
+        const base = Math.max(40, Math.round((prefillHotel?.rating || 3) * 25));
+        setPricePerNight(base);
+      });
+    }
+  }, [prefillHotel?.name]);
+
+  useEffect(() => {
+    setUserName(user?.name || '');
+    setPhoneNumber((user as any)?.phone || '');
+  }, [user?.name]);
+
+  useEffect(() => {
+    Animated.timing(formAnim, { toValue: 0, duration: 280, useNativeDriver: true }).start();
+  }, []);
+
+  const rooms = useMemo(() => {
+    const base = pricePerNight ?? Math.max(40, Math.round((prefillHotel?.rating || 3) * 25));
+    return [
+      { id: 'std', name: 'Estándar', capacity: 2, price: base },
+      { id: 'dlx', name: 'Deluxe', capacity: 3, price: Math.round(base * 1.3) },
+      { id: 'ste', name: 'Suite', capacity: 4, price: Math.round(base * 1.8) },
+    ];
+  }, [pricePerNight, prefillHotel?.rating]);
+
+  const reservations = user.reservations || [];
+  const now = useMemo(() => new Date(), []);
+
+  const upcoming = reservations
+    .filter((r: any) => new Date(r.date) >= now)
+    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const past = reservations
+    .filter((r: any) => new Date(r.date) < now)
+    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const formatDisplayDate = (isoYmd?: string | null) => {
+    if (!isoYmd) return '';
+    try {
+      const d = new Date(isoYmd + 'T12:00:00');
+      return d.toLocaleDateString();
+    } catch {
+      return isoYmd;
+    }
+  };
+
   const onDayPress = (day: any) => {
     const ymd = day?.dateString as string;
     if (!ymd) return;
@@ -71,111 +153,46 @@ const ReservationsScreen: React.FC = () => {
     }
     return map;
   })();
-    setSelectedRoom(null);
-    setTab('upcoming');
-  };
-  const reservations = user.reservations || [];
-
-  const now = useMemo(() => new Date(), []);
-
-  const upcoming = reservations
-    .filter(r => new Date(r.date) >= now)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const past = reservations
-    .filter(r => new Date(r.date) < now)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  const formatDisplayDate = (isoYmd?: string | null) => {
-    if (!isoYmd) return '';
-    try {
-      const d = new Date(isoYmd + 'T12:00:00'); // noon avoids timezone shifts
-      return d.toLocaleDateString();
-    } catch {
-      return isoYmd;
-    }
-  };
-
-  const onDayPress = (day: any) => {
-    const ymd = day?.dateString as string;
-    if (!ymd) return;
-    // If no check-in or both set, start new range
-    if (!checkIn || (checkIn && checkOut)) {
-      setCheckIn(ymd);
-      setCheckOut(null);
-      return;
-    }
-    // If only check-in set, assign check-out ensuring it's after or equal
-    if (checkIn && !checkOut) {
-      if (ymd >= checkIn) {
-        setCheckOut(ymd);
-        setCalendarVisible(false);
-      } else {
-        // Selected before check-in: make it the new check-in
-        setCheckIn(ymd);
-      }
-      return;
-    }
-  };
-
-  useEffect(() => {
-    if (checkIn && checkOut) {
-      const start = new Date(checkIn + 'T12:00:00');
-      const end = new Date(checkOut + 'T12:00:00');
-      const diffMs = end.getTime() - start.getTime();
-      const diffDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
-      setNights(diffDays);
-    }
-  }, [checkIn, checkOut]);
 
   const handleAdd = () => {
-    if (!selectedDate && dateInputText.trim().length === 0) {
-      Alert.alert(getTranslation(language, 'error') || 'Error', 'Selecciona la fecha de la reservación');
+    if (!userName || userName.trim().length === 0) {
+      Alert.alert(getTranslation(language, 'error') || 'Error', 'Ingresa el nombre de quien reserva');
       return;
     }
-
-    if (!prefillHotel && (!dateInputText || dateInputText.trim().length === 0)) {
-      // if no hotel prefill, require hotel name entry (handled below)
+    if (!checkIn || !checkOut) {
+      Alert.alert(getTranslation(language, 'error') || 'Error', 'Selecciona fecha de entrada y salida');
+      return;
     }
-
     const hotelName = prefillHotel?.name ?? (route?.params?.hotelName ?? '');
-
     if (!hotelName || hotelName.trim().length === 0) {
       Alert.alert(getTranslation(language, 'error') || 'Error', 'Proporciona el nombre del hotel');
       return;
     }
-
     const guests = parseInt(guestsText || '1', 10);
-
     if (nights <= 0) {
-      Alert.alert(getTranslation(language, 'error') || 'Error', 'El número de noches debe ser al menos 1');
+      Alert.alert(getTranslation(language, 'error') || 'Error', 'Selecciona un rango de al menos 1 noche');
       return;
     }
-
     if (selectedRoom && guests > selectedRoom.capacity) {
       Alert.alert(getTranslation(language, 'error') || 'Error', `La habitación seleccionada admite hasta ${selectedRoom.capacity} persona(s)`);
       return;
     }
-
-    // Construct an ISO date using the selected YYYY-MM-DD, set time to 12:00
-    const chosenYmd = selectedDate ?? dateInputText;
-    const isoDate = new Date(chosenYmd + 'T12:00:00').toISOString();
-
-    if (isNaN(new Date(isoDate).getTime())) {
-      Alert.alert(getTranslation(language, 'error') || 'Error', 'Fecha inválida.');
-      return;
-    }
-
+    const isoCheckIn = new Date(checkIn + 'T12:00:00').toISOString();
+    const isoCheckOut = new Date(checkOut + 'T12:00:00').toISOString();
     const perNight = selectedRoom?.price ?? pricePerNight ?? Math.max(40, Math.round((prefillHotel?.rating || 3) * 25));
-    const total = perNight * nights;
-
+    const total = perNight * Math.max(1, nights);
     const newRes = {
       id: Date.now().toString(),
       hotelName: hotelName.trim(),
       place_id: prefillHotel?.place_id ?? undefined,
-      date: isoDate,
+      date: isoCheckIn,
+      checkIn: checkIn,
+      checkOut: checkOut,
       guests: guests > 0 ? guests : 1,
       notes: notes || undefined,
-      nights,
+      userName: userName.trim(),
+      phoneNumber: phoneNumber.trim() || undefined,
+      nights: Math.max(1, nights),
       roomType: selectedRoom?.name,
       roomCapacity: selectedRoom?.capacity,
       pricePerNight: perNight,
@@ -184,24 +201,39 @@ const ReservationsScreen: React.FC = () => {
     };
     dispatch(addReservation(newRes));
     Alert.alert(getTranslation(language, 'reservations') || 'Reservación', 'Reservación agregada');
-    // limpiar formulario
-    // if it was prefilled from a hotel, keep hotelName cleared; keep selected date optional behavior:
-    setSelectedDate(null);
-    setDateInputText('');
+    setCheckIn(null);
+    setCheckOut(null);
     setGuestsText('1');
     setNotes('');
+    setUserName(user?.name || '');
+    setPhoneNumber((user as any)?.phone || '');
     setNights(1);
     setSelectedRoom(null);
     setTab('upcoming');
   };
 
-  const handleRemove = (id: string) => {
-    Alert.alert(getTranslation(language, 'delete') || 'Eliminar', '¿Eliminar esta reservación?', [
+  const handleRemove = (res: any) => {
+    const checkDate = res?.checkIn || res?.date;
+    let refundable = false;
+    let refundAmount = 0;
+    if (checkDate) {
+      const checkInDate = new Date(checkDate + 'T12:00:00');
+      const diffDays = Math.floor((checkInDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      refundable = diffDays >= 7;
+      if (refundable && res?.totalPrice) {
+        refundAmount = res.totalPrice * 0.75;
+      }
+    }
+
+    const message = refundable
+      ? `Cancelando con al menos 7 días de anticipación se reembolsa el 75%. Monto estimado: $${refundAmount.toFixed(2)}`
+      : 'Cancelaciones con menos de 7 días de anticipación no generan reembolso.';
+
+    Alert.alert(getTranslation(language, 'delete') || 'Eliminar', message, [
       { text: getTranslation(language, 'cancel') || 'Cancelar', style: 'cancel' },
-      { text: getTranslation(language, 'delete') || 'Eliminar', style: 'destructive', onPress: () => dispatch(removeReservation({ id })) },
+      { text: getTranslation(language, 'delete') || 'Eliminar', style: 'destructive', onPress: () => dispatch(removeReservation({ id: res.id })) },
     ]);
   };
-
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.item}>
       <View style={{ flex: 1 }}>
@@ -212,127 +244,185 @@ const ReservationsScreen: React.FC = () => {
           {item.nights ? ` · ${item.nights} noche(s)` : ''}
         </Text>
         <Text style={styles.itemMeta}>Invitados: {item.guests}</Text>
+        {item.adjustmentType === 'penalty' && item.adjustmentAmount ? (
+          <Text style={styles.itemMeta}>Costo de penalización: ${item.adjustmentAmount.toFixed(2)}</Text>
+        ) : null}
+        {item.adjustmentType === 'extension' && item.adjustmentAmount ? (
+          <Text style={styles.itemMeta}>Costo de alargue: ${item.adjustmentAmount.toFixed(2)}</Text>
+        ) : null}
         {item.notes ? <Text style={styles.itemNotes}>{item.notes}</Text> : null}
       </View>
       <View style={styles.itemActions}>
-        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleRemove(item.id)}>
+        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleRemove(item)}>
           <Text style={styles.deleteText}>{getTranslation(language, 'delete') || 'Eliminar'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.deleteBtn, { marginTop: 6, borderColor: colors.vibrantOrange }]} onPress={() => openEditModal(item)}>
+          <Text style={[styles.deleteText, { color: colors.vibrantOrange }]}>Editar</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
-  // markedDates for react-native-calendars
-  const markedDates: { [key: string]: any } = (() => {
-    const map: { [key: string]: any } = {};
-    if (checkIn && checkOut) {
-      // build range inclusive
-      const start = new Date(checkIn + 'T00:00:00');
-      const end = new Date(checkOut + 'T00:00:00');
-      const dayMs = 24 * 60 * 60 * 1000;
-      for (let t = start.getTime(), i = 0; t <= end.getTime(); t += dayMs, i++) {
-        const d = new Date(t);
-        const y = d.toISOString().split('T')[0];
-        if (y === checkIn) map[y] = { startingDay: true, color: colors.vibrantOrange, textColor: '#fff' };
-        else if (y === checkOut) map[y] = { endingDay: true, color: colors.vibrantOrange, textColor: '#fff' };
-        else map[y] = { color: '#FFD9C7', textColor: colors.deepBlue };
+  const openEditModal = (res: any) => {
+    setEditingReservation(res);
+    setEditModalVisible(true);
+  };
+
+  const applyAdjustment = (type: 'penalty' | 'extension') => {
+    if (!editingReservation) return;
+    const perNight = editingReservation.pricePerNight ?? pricePerNight ?? 0;
+    let newCheckOut = editingReservation.checkOut || editingReservation.checkIn;
+    let newNights = editingReservation.nights || 1;
+    let adjustmentAmount = 0;
+
+    const baseDate = new Date((editingReservation.checkOut || editingReservation.checkIn) + 'T12:00:00');
+    if (type === 'extension') {
+      const extended = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
+      newCheckOut = extended.toISOString().split('T')[0];
+      newNights = (editingReservation.nights || 1) + 1;
+      adjustmentAmount = perNight;
+    } else {
+      // penalty for leaving earlier: reduce one night if possible
+      const shortened = new Date(baseDate.getTime() - 24 * 60 * 60 * 1000);
+      const minDate = new Date((editingReservation.checkIn || editingReservation.date) + 'T12:00:00');
+      if (shortened <= minDate) {
+        Alert.alert(getTranslation(language, 'error') || 'Error', 'No puedes salir antes del día de entrada');
+        return;
       }
-    } else if (checkIn) {
-      map[checkIn] = { startingDay: true, color: colors.vibrantOrange, textColor: '#fff' };
+      newCheckOut = shortened.toISOString().split('T')[0];
+      newNights = Math.max(1, (editingReservation.nights || 1) - 1);
+      adjustmentAmount = perNight * 0.5; // penalización 50% de una noche
     }
-    return map;
-  })();
+
+    const newTotal = (perNight * Math.max(1, newNights)) + (type === 'penalty' ? adjustmentAmount : 0);
+    const updated = {
+      ...editingReservation,
+      checkOut: newCheckOut,
+      nights: newNights,
+      totalPrice: newTotal,
+      adjustmentType: type,
+      adjustmentAmount,
+    };
+    dispatch(updateReservation(updated));
+    setEditModalVisible(false);
+    setEditingReservation(null);
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{getTranslation(language, 'reservations') || 'Reservaciones'}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>{getTranslation(language, 'reservations') || 'Reservaciones'}</Text>
 
-      <View style={styles.tabRow}>
-        <TouchableOpacity style={[styles.tabBtn, tab === 'upcoming' ? styles.tabActive : null]} onPress={() => setTab('upcoming')}>
-          <Text style={[styles.tabText, tab === 'upcoming' ? styles.tabTextActive : null]}>{getTranslation(language, 'upcoming') || 'Próximas'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.tabBtn, tab === 'past' ? styles.tabActive : null]} onPress={() => setTab('past')}>
-          <Text style={[styles.tabText, tab === 'past' ? styles.tabTextActive : null]}>{getTranslation(language, 'past') || 'Pasadas'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.listWrap}>
-        {tab === 'upcoming' ? (
-          upcoming.length === 0 ? <Text style={styles.empty}>{getTranslation(language, 'noUpcoming') || 'No hay reservaciones próximas'}</Text> : (
-            <FlatList data={upcoming} keyExtractor={(i) => i.id} renderItem={renderItem} />
-          )
-        ) : (
-          past.length === 0 ? <Text style={styles.empty}>{getTranslation(language, 'noPast') || 'No hay reservaciones pasadas'}</Text> : (
-            <FlatList data={past} keyExtractor={(i) => i.id} renderItem={renderItem} />
-          )
-        )}
-      </View>
-
-      <View style={styles.addWrap}>
-        <Text style={styles.addTitle}>{getTranslation(language, 'addReservation') || 'Añadir reservación'}</Text>
-
-        {/* Hotel name display if prefilled */}
-        {prefillHotel?.name ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={styles.prefillHotel}>{prefillHotel.name}</Text>
-            <TouchableOpacity onPress={() => toggleDetails(true)}>
-              <Text style={{ color: colors.vibrantOrange, fontWeight: '700' }}>Detalles del hotel</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        {/* Date range: open calendar modal */}
-        <Text style={styles.label}>{getTranslation(language, 'selectDates') || 'Selecciona fechas'}</Text>
-        <TouchableOpacity style={styles.datePicker} onPress={() => setCalendarVisible(true)}>
-          <Text style={styles.datePickerText}>
-            {checkIn ? `${getTranslation(language, 'checkIn') || 'Entrada'}: ${formatDisplayDate(checkIn)}` : (getTranslation(language, 'checkIn') || 'Entrada')}
-            {checkOut ? `  ·  ${getTranslation(language, 'checkOut') || 'Salida'}: ${formatDisplayDate(checkOut)}` : ''}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Nights (auto-computed) */}
-        <Text style={[styles.label, { marginTop: 10 }]}>Noches</Text>
-        <View style={styles.nightsRowReadonly}>
-          <Text style={styles.nightsValue}>{nights}</Text>
+        <View style={styles.tabRow}>
+          <TouchableOpacity style={[styles.tabBtn, tab === 'upcoming' ? styles.tabActive : null]} onPress={() => setTab('upcoming')}>
+            <Text style={[styles.tabText, tab === 'upcoming' ? styles.tabTextActive : null]}>{getTranslation(language, 'upcoming') || 'Próximas'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tabBtn, tab === 'past' ? styles.tabActive : null]} onPress={() => setTab('past')}>
+            <Text style={[styles.tabText, tab === 'past' ? styles.tabTextActive : null]}>{getTranslation(language, 'past') || 'Pasadas'}</Text>
+          </TouchableOpacity>
         </View>
 
-        <Text style={[styles.label, { marginTop: 10 }]}>{getTranslation(language, 'guests') || 'Invitados'}</Text>
-        <TextInput
-          value={guestsText}
-          onChangeText={setGuestsText}
-          placeholder="1"
-          keyboardType="number-pad"
-          style={styles.input}
-        />
-
-        {/* Rooms selection if hotel provided */}
-        {prefillHotel?.name ? (
-          <View style={{ marginTop: 10 }}>
-            <Text style={styles.label}>Habitación</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 4 }}>
-              {rooms.map(r => (
-                <TouchableOpacity key={r.id} style={[styles.roomChip, selectedRoom?.id === r.id ? styles.roomChipActive : null]} onPress={() => setSelectedRoom(r)}>
-                  <Text style={[styles.roomChipText, selectedRoom?.id === r.id ? styles.roomChipTextActive : null]}>{r.name} · {r.capacity} pers · ${r.price}/noche</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
-
-        {/* Price summary */}
-        <View style={styles.priceBox}>
-          <Text style={styles.priceLine}>Precio por noche: ${selectedRoom?.price ?? pricePerNight ?? 0}</Text>
-          <Text style={styles.priceLine}>Noches: {nights}</Text>
-          <Text style={[styles.priceLine, { fontWeight: '700', color: colors.deepBlue }]}>Total: ${((selectedRoom?.price ?? pricePerNight ?? 0) * Math.max(1, nights)).toFixed(2)}</Text>
+        <View style={styles.listWrap}>
+          {tab === 'upcoming' ? (
+            upcoming.length === 0 ? <Text style={styles.empty}>{getTranslation(language, 'noUpcoming') || 'No hay reservaciones próximas'}</Text> : (
+              <FlatList data={upcoming} keyExtractor={(i) => i.id} renderItem={renderItem} scrollEnabled={false} />
+            )
+          ) : (
+            past.length === 0 ? <Text style={styles.empty}>{getTranslation(language, 'noPast') || 'No hay reservaciones pasadas'}</Text> : (
+              <FlatList data={past} keyExtractor={(i) => i.id} renderItem={renderItem} scrollEnabled={false} />
+            )
+          )}
         </View>
 
-        <Text style={[styles.label, { marginTop: 10 }]}>{getTranslation(language, 'notes') || 'Notas (opcional)'}</Text>
-        <TextInput value={notes} onChangeText={setNotes} placeholder={getTranslation(language, 'notesPlaceholder') || 'Notas'} style={styles.input} />
+        <View style={styles.addWrap}>
+        <Animated.View style={{ transform: [{ translateY: formAnim }] }}>
+          <Text style={styles.addTitle}>{getTranslation(language, 'addReservation') || 'Añadir reservación'}</Text>
 
-        <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
-          <Text style={styles.addBtnText}>{getTranslation(language, 'reserveNow') || 'Reservar ahora'}</Text>
-        </TouchableOpacity>
+          {/* Hotel name display if prefilled */}
+          {prefillHotel?.name ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={styles.prefillHotel}>{prefillHotel.name}</Text>
+              <TouchableOpacity onPress={() => toggleDetails(true)}>
+                <Text style={{ color: colors.vibrantOrange, fontWeight: '700' }}>Detalles del hotel</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {/* Nombre de quien reserva */}
+          <Text style={styles.label}>{getTranslation(language, 'fullName') || 'Nombre completo'}</Text>
+          <TextInput
+            value={userName}
+            onChangeText={setUserName}
+            placeholder={getTranslation(language, 'fullName') || 'Nombre completo'}
+            style={styles.input}
+          />
+
+          {/* Teléfono */}
+          <Text style={[styles.label, { marginTop: 8 }]}>{getTranslation(language, 'phone') || 'Teléfono'}</Text>
+          <TextInput
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            placeholder={getTranslation(language, 'phone') || 'Teléfono'}
+            keyboardType="phone-pad"
+            style={styles.input}
+          />
+
+          {/* Date range: open calendar modal */}
+          <Text style={[styles.label, { marginTop: 10 }]}>{getTranslation(language, 'selectDates') || 'Selecciona fechas'}</Text>
+          <TouchableOpacity style={styles.datePicker} onPress={() => setCalendarVisible(true)}>
+            <Text style={styles.datePickerText}>
+              {checkIn ? `${getTranslation(language, 'checkIn') || 'Entrada'}: ${formatDisplayDate(checkIn)}` : (getTranslation(language, 'checkIn') || 'Entrada')}
+              {checkOut ? `  ·  ${getTranslation(language, 'checkOut') || 'Salida'}: ${formatDisplayDate(checkOut)}` : ''}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Nights (auto-computed) */}
+          <Text style={[styles.label, { marginTop: 10 }]}>Noches</Text>
+          <View style={styles.nightsRowReadonly}>
+            <Text style={styles.nightsValue}>{nights}</Text>
+          </View>
+
+          {/* Guests */}
+          <Text style={[styles.label, { marginTop: 10 }]}>{getTranslation(language, 'guests') || 'Invitados'}</Text>
+          <TextInput
+            value={guestsText}
+            onChangeText={setGuestsText}
+            placeholder="1"
+            keyboardType="number-pad"
+            style={styles.input}
+          />
+
+          {/* Rooms selection if hotel provided */}
+          {prefillHotel?.name ? (
+            <View style={{ marginTop: 10 }}>
+              <Text style={styles.label}>Habitación</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 4 }}>
+                {rooms.map(r => (
+                  <TouchableOpacity key={r.id} style={[styles.roomChip, selectedRoom?.id === r.id ? styles.roomChipActive : null]} onPress={() => setSelectedRoom(r)}>
+                    <Text style={[styles.roomChipText, selectedRoom?.id === r.id ? styles.roomChipTextActive : null]}>{r.name} · {r.capacity} pers · ${r.price}/noche</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {/* Price summary */}
+          <View style={styles.priceBox}>
+            <Text style={styles.priceLine}>Precio por noche: ${selectedRoom?.price ?? pricePerNight ?? 0}</Text>
+            <Text style={styles.priceLine}>Noches: {nights}</Text>
+            <Text style={[styles.priceLine, { fontWeight: '700', color: colors.deepBlue }]}>Total: ${((selectedRoom?.price ?? pricePerNight ?? 0) * Math.max(1, nights)).toFixed(2)}</Text>
+          </View>
+
+          {/* Notas */}
+          <Text style={[styles.label, { marginTop: 10 }]}>{getTranslation(language, 'notes') || 'Notas (opcional)'}</Text>
+          <TextInput value={notes} onChangeText={setNotes} placeholder={getTranslation(language, 'notesPlaceholder') || 'Notas'} style={styles.input} />
+
+          <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
+            <Text style={styles.addBtnText}>{getTranslation(language, 'reserveNow') || 'Reservar ahora'}</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
+      </ScrollView>
 
       <Modal visible={calendarVisible} animationType="slide" onRequestClose={() => setCalendarVisible(false)}>
         <View style={styles.calendarWrap}>
@@ -357,6 +447,24 @@ const ReservationsScreen: React.FC = () => {
             }}
             style={{ borderTopWidth: 1, borderColor: '#eee' }}
           />
+        </View>
+      </Modal>
+
+      <Modal visible={editModalVisible} transparent animationType="fade" onRequestClose={() => setEditModalVisible(false)}>
+        <View style={styles.editBackdrop}>
+          <View style={styles.editCard}>
+            <Text style={styles.editTitle}>Editar reservación</Text>
+            <Text style={styles.editSubtitle}>Ajusta tu salida o agrega una noche</Text>
+            <TouchableOpacity style={styles.editOption} onPress={() => applyAdjustment('penalty')}>
+              <Text style={styles.editOptionText}>Salir un día antes (penalización)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.editOption, { backgroundColor: colors.vibrantOrange }]} onPress={() => applyAdjustment('extension')}>
+              <Text style={[styles.editOptionText, { color: '#fff' }]}>Alargar una noche</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.editClose} onPress={() => setEditModalVisible(false)}>
+              <Text style={styles.editCloseText}>{getTranslation(language, 'close') || 'Cerrar'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
@@ -415,6 +523,7 @@ const ReservationsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  scrollContent: { paddingBottom: 32 },
   title: { fontSize: 22, fontWeight: '700', color: colors.deepBlue, marginBottom: 12 },
   tabRow: { flexDirection: 'row', marginBottom: 12 },
   tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8, borderWidth: 1, borderColor: '#eee' },
@@ -477,6 +586,14 @@ const styles = StyleSheet.create({
   selectBtnText: { color: colors.deepBlue, fontWeight: '700' },
   selectBtnTextActive: { color: '#fff' },
   activityText: { marginTop: 6, color: colors.darkGray },
+  editBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  editCard: { width: '100%', backgroundColor: '#fff', borderRadius: 12, padding: 16 },
+  editTitle: { fontWeight: '700', fontSize: 16, color: colors.deepBlue },
+  editSubtitle: { color: colors.darkGray, marginTop: 4, marginBottom: 12 },
+  editOption: { paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10, backgroundColor: '#f3f4f7', marginBottom: 10 },
+  editOptionText: { fontWeight: '700', color: colors.deepBlue },
+  editClose: { paddingVertical: 10, alignItems: 'center' },
+  editCloseText: { color: colors.vibrantOrange, fontWeight: '700' },
 });
 
 export default ReservationsScreen;
