@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   priceLine: { color: colors.deepBlue, marginTop: 2 },
 
   // Details panel
-  detailsPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, elevation: 16, paddingTop: 12 },
+  detailsPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, elevation: 16, paddingTop: 12, maxHeight: '75%' },
   detailsHeader: { paddingHorizontal: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   detailsTitle: { fontWeight: '700', fontSize: 16, color: colors.deepBlue },
   detailsImage: { width: '100%', height: 180, borderRadius: 12, marginBottom: 12 },

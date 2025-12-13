@@ -12,6 +12,7 @@ import {
   Dimensions,
   Modal,
   Animated,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
@@ -25,8 +26,8 @@ import { searchHotels, getPlaceDetails, HotelPlace, PlaceDetails } from '../serv
 import { addFavoriteHotel, removeFavoriteHotel } from '../slices/userReducer';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = Math.round(SCREEN_WIDTH * 0.86);
-const CARD_HEIGHT = 220;
+const CARD_WIDTH = SCREEN_WIDTH - 32;
+const CARD_HEIGHT = 240;
 
 type HotelCardProps = {
   item: PlaceDetails;
@@ -40,6 +41,7 @@ const HotelCard: React.FC<HotelCardProps> = ({ item, onPress, onToggleFavorite, 
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const confirmOpacity = useRef(new Animated.Value(0)).current;
   const [confirmText, setConfirmText] = useState<string>('');
+  const coordsText = item.lat && item.lng ? `${item.lat.toFixed(3)}, ${item.lng.toFixed(3)}` : null;
 
   const playConfirm = (text: string) => {
     setConfirmText(text);
@@ -98,6 +100,12 @@ const HotelCard: React.FC<HotelCardProps> = ({ item, onPress, onToggleFavorite, 
 
         {item.address ? <Text style={styles.cardAddress} numberOfLines={1}>{item.address}</Text> : null}
         <Text style={styles.cardDesc} numberOfLines={2}>{item.website ?? 'Descripción no disponible'}</Text>
+
+        {coordsText ? (
+          <View style={styles.cardMetaRow}>
+            <Text style={styles.cardMetaText}>Coord: {coordsText}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.cardActionsRow}>
           <TouchableOpacity style={styles.reserveBtnSmall} onPress={onReservePress}>
@@ -247,8 +255,8 @@ const HomeScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.carouselWrap}>
-        {hotelsLoading ? (
+      <View style={styles.listWrap}>
+        {hotelsLoading && hotels.length === 0 ? (
           <ActivityIndicator size="large" color={colors.vibrantOrange} />
         ) : hotels.length === 0 ? (
           <View style={styles.emptyBox}>
@@ -259,14 +267,10 @@ const HomeScreen = () => {
             data={hotels}
             renderItem={renderHotel}
             keyExtractor={(i) => i.place_id ?? i.name}
-            horizontal
-            pagingEnabled
-            snapToAlignment="center"
-            decelerationRate="fast"
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carousel}
-            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-          />
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.verticalList}
+            refreshControl={<RefreshControl refreshing={hotelsLoading} onRefresh={loadHotels} colors={[colors.vibrantOrange]} tintColor={colors.vibrantOrange} />}>
+          </FlatList>
         )}
       </View>
 
@@ -359,12 +363,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     alignItems: 'center',
   },
+  listWrap: {
+    flex: 1,
+    marginTop: 8,
+  },
+  verticalList: {
+    paddingBottom: 24,
+  },
   card: {
     width: CARD_WIDTH,
     backgroundColor: '#fff',
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 3,
+    marginBottom: 12,
   },
   cardImageWrap: {
     width: '100%',
@@ -441,6 +453,8 @@ const styles = StyleSheet.create({
     color: colors.darkGray,
     fontSize: 13,
   },
+  cardMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  cardMetaText: { color: colors.darkGray, fontSize: 12, marginRight: 10 },
   cardActionsRow: { marginTop: 8, flexDirection: 'row', justifyContent: 'flex-end' },
   reserveBtnSmall: { backgroundColor: colors.vibrantOrange, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
   reserveBtnSmallText: { color: '#fff', fontWeight: '700', fontSize: 13 },
