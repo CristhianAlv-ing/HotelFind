@@ -7,8 +7,8 @@ import { colors } from '../theme/colors';
 import { lightTheme, darkTheme } from '../theme/themes';
 import { getTranslation } from '../utils/translations';
 
-import HomeScreen from '../screens/HomeScreen';
-import SearchScreen from '../screens/SearchScreen';
+import HomeScreenNew from '../screens/HomeScreenNew';
+import SearchScreenNew from '../screens/SearchScreenNew';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ReservationsScreen from '../screens/ReservationsScreen';
@@ -75,18 +75,20 @@ const MainTabs: React.FC<MainTabsProps> = ({ setIsLoggedIn }) => {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={HomeScreenNew}
         options={{ title: getTranslation(language, 'home') }}
       />
       <Tab.Screen
         name="Search"
-        component={SearchScreen}
+        component={SearchScreenNew}
         options={{ title: getTranslation(language, 'search') }}
       />
       <Tab.Screen
         name="Reservations"
         component={ReservationsScreen}
-        options={{ title: getTranslation(language, 'reservations') || 'Reservaciones' }}
+        options={{ 
+          title: getTranslation(language, 'reservations') || 'Reservaciones'
+        }}
       />
       <Tab.Screen
         name="Profile"

@@ -19,7 +19,7 @@ import { lightTheme, darkTheme } from '../theme/themes';
 import { getTranslation } from '../utils/translations';
 import { searchHotels, searchHotelsBooking, Hotel, SearchParams } from '../services/api';
 
-const SearchScreen: React.FC<any> = ({ navigation }) => {
+const SearchScreenNew: React.FC<any> = ({ navigation }) => {
   const { language, theme } = useApp();
   const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
@@ -59,19 +59,22 @@ const SearchScreen: React.FC<any> = ({ navigation }) => {
     };
 
     try {
-      // Intentar con Hotels4 API primero
+      // Intentar con Hotels4 API primero (con fallback automático a mock)
       const result = await searchHotels(params);
+      setHotels(result.hotels);
       
+      // Si no hay resultados después del fallback, mostrar mensaje
       if (result.hotels.length === 0) {
-        // Fallback a Booking.com API
-        const bookingResult = await searchHotelsBooking(params);
-        setHotels(bookingResult.hotels);
-      } else {
-        setHotels(result.hotels);
+        Alert.alert(
+          getTranslation(language, 'noResults') || 'Sin resultados',
+          `No se encontraron hoteles en "${destination}"`
+        );
       }
     } catch (error) {
       console.error('Error searching hotels:', error);
-      Alert.alert('Error', getTranslation(language, 'searchError') || 'Error al buscar hoteles');
+      // No mostrar alert de error, ya que el API ya usa fallback automático
+      // Solo establecer array vacío
+      setHotels([]);
     } finally {
       setLoading(false);
     }
@@ -479,4 +482,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SearchScreen;
+export default SearchScreenNew;

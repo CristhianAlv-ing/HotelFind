@@ -1,8 +1,8 @@
 // src/Navigation/AppStack.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from '../screens/HomeScreen';
-import SearchScreen from '../screens/SearchScreen';
+import HomeScreenNew from '../screens/HomeScreenNew';
+import SearchScreenNew from '../screens/SearchScreenNew';
 import HotelDetailsScreen from '../screens/HotelDetailsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import OfferDetailsScreen from '../screens/OfferDetailsScreen';
@@ -18,8 +18,8 @@ const AppStack = () => {
                 headerShown: false,
             }}
         >
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Search" component={SearchScreen} />
+            <Stack.Screen name="Home" component={HomeScreenNew} />
+            <Stack.Screen name="Search" component={SearchScreenNew} />
             <Stack.Screen name="Reservations" component={ReservationsScreen} />
             <Stack.Screen name="CreateReservation" component={CreateReservationScreen} />
             <Stack.Screen name="HotelDetails" component={HotelDetailsScreen} />

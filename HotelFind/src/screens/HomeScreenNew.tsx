@@ -17,7 +17,7 @@ import { lightTheme, darkTheme } from '../theme/themes';
 import { getTranslation } from '../utils/translations';
 import { getPopularHotels, Hotel } from '../services/api';
 
-const HomeScreen: React.FC<any> = ({ navigation }) => {
+const HomeScreenNew: React.FC<any> = ({ navigation }) => {
   const { language, theme } = useApp();
   const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
@@ -206,19 +206,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
     paddingHorizontal: 20,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: colors.pureWhite,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.pureWhite,
-    marginTop: 4,
+    marginTop: 2,
     opacity: 0.9,
   },
   searchBar: {
@@ -236,28 +236,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   citiesScroll: {
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 12,
+    flexGrow: 0,
   },
   citiesContent: {
     paddingHorizontal: 16,
+    paddingRight: 32,
   },
   cityChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 25,
     borderWidth: 1,
-    marginRight: 8,
+    marginRight: 10,
+    minWidth: 100,
   },
   cityChipActive: {
     backgroundColor: colors.vibrantOrange,
     borderColor: colors.vibrantOrange,
+    minWidth: 100,
   },
   cityIcon: {
     fontSize: 18,
-    marginRight: 6,
+    marginRight: 8,
   },
   cityName: {
     fontSize: 14,
@@ -375,4 +379,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default HomeScreenNew;

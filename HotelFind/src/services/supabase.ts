@@ -83,3 +83,145 @@ export async function getCurrentUser() {
   if (error) throw error;
   return data.user;
 }
+
+// ============================================
+// RESERVACIONES DE HOTELES
+// ============================================
+
+export interface Reservation {
+  id?: string;
+  user_id: string;
+  hotel_id: string;
+  hotel_name: string;
+  hotel_address: string;
+  hotel_city: string;
+  check_in: string;
+  check_out: string;
+  guests: number;
+  rooms: number;
+  total_price: number;
+  currency: string;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  created_at?: string;
+}
+
+/**
+ * Crear una nueva reservación
+ */
+export async function createReservation(reservation: Omit<Reservation, 'id' | 'created_at'>) {
+  try {
+    console.log('📝 Creando reservación en Supabase...');
+    
+    const { data, error } = await supabase
+      .from('reservations')
+      .insert([reservation])
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    console.log('✅ Reservación creada exitosamente:', data.id);
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('❌ Error creando reservación:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Obtener todas las reservaciones de un usuario
+ */
+export async function getUserReservations(userId: string) {
+  try {
+    console.log('🔍 Obteniendo reservaciones del usuario...');
+    
+    const { data, error } = await supabase
+      .from('reservations')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    console.log(`✅ ${data?.length || 0} reservaciones encontradas`);
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('❌ Error obteniendo reservaciones:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Obtener una reservación específica
+ */
+export async function getReservationById(reservationId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('reservations')
+      .select('*')
+      .eq('id', reservationId)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('❌ Error obteniendo reservación:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Actualizar el estado de una reservación
+ */
+export async function updateReservationStatus(
+  reservationId: string, 
+  status: 'pending' | 'confirmed' | 'cancelled'
+) {
+  try {
+    console.log(`🔄 Actualizando reservación ${reservationId} a ${status}...`);
+    
+    const { data, error } = await supabase
+      .from('reservations')
+      .update({ status })
+      .eq('id', reservationId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    console.log('✅ Reservación actualizada exitosamente');
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('❌ Error actualizando reservación:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Cancelar una reservación
+ */
+export async function cancelReservation(reservationId: string) {
+  return updateReservationStatus(reservationId, 'cancelled');
+}
+
+/**
+ * Eliminar una reservación
+ */
+export async function deleteReservation(reservationId: string) {
+  try {
+    console.log(`🗑️ Eliminando reservación ${reservationId}...`);
+    
+    const { error } = await supabase
+      .from('reservations')
+      .delete()
+      .eq('id', reservationId);
+
+    if (error) throw error;
+    
+    console.log('✅ Reservación eliminada exitosamente');
+    return { error: null };
+  } catch (error: any) {
+    console.error('❌ Error eliminando reservación:', error.message);
+    return { error };
+  }
+}
